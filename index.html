@@ -321,7 +321,17 @@
       .status-badge{print-color-adjust:exact; -webkit-print-color-adjust:exact}
       .photo-grid{page-break-inside:avoid}
       .packet-toolbar{display:none!important}
+      /* When packet overlay is open, hide everything else and make overlay printable */
+      body:has(#packet-overlay) .app-header,
+      body:has(#packet-overlay) .container{display:none!important}
+      #packet-overlay{position:static!important;overflow:visible!important;height:auto!important}
     }
+
+    /* Make packet overlay text readable — override inline grey colors */
+    #packet-overlay [style*="color:#666"]{color:#333!important}
+    #packet-overlay [style*="color:#999"]{color:#444!important}
+    #packet-overlay [style*="color: #666"]{color:#333!important}
+    #packet-overlay [style*="color: #999"]{color:#444!important}
     
     /* Utilities */
     .mt-1{margin-top:8px}
