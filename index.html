@@ -1357,7 +1357,20 @@ const db = {
   getAssetsByLocation(locationId) {
     return this.assets.filter(a => a.location_id === locationId);
   },
-  
+
+  updateAsset(assetId, updates) {
+    const idx = this.assets.findIndex(a => a.asset_id === assetId);
+    if (idx === -1) return null;
+    Object.assign(this.assets[idx], updates);
+    this.save();
+    return this.assets[idx];
+  },
+
+  removeAsset(assetId) {
+    this.assets = this.assets.filter(a => a.asset_id !== assetId);
+    this.save();
+  },
+
   generateId() {
     return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
@@ -2172,7 +2185,6 @@ const app = {
     container.innerHTML = db.clients.map(client => {
       const locations = db.getLocationsByClient(client.client_id);
       const contractMode = client.contract_mode || 'contract';
-      assets = assets.slice().sort((a,b)=> app.calcRisk(b)-app.calcRisk(a));
       return `
         <div class="card" style="margin-bottom:12px">
           <div class="card-header flex-between">
@@ -2246,11 +2258,15 @@ const app = {
                     <div class="list-item-title">${asset.type} - ${asset.manufacturer}</div>
                     <div class="list-item-meta">
                       <span class="pill ${asset.category === 'Refrigeration' ? 'teal' : ''}">${asset.category}</span>
-                      ${(() => { const s = app.calcRisk(asset); const b = app.riskBand(s); return `<span class=\"risk-pill ${b.cls}\">Risk ${b.label} • ${s}</span>`; })()} <span style="margin-left:8px"></span>Model: ${asset.model || 'N/A'} • 
-                      Serial: ${asset.serial || 'N/A'} • 
-                      <span style="color:${asset.criticality === 'High' ? '#e74c3c' : asset.criticality === 'Medium' ? '#f1c40f' : '#2ecc71'}">${asset.criticality}</span> criticality • 
+                      ${(() => { const s = app.calcRisk(asset); const b = app.riskBand(s); return `<span class=\"risk-pill ${b.cls}\">Risk ${b.label} • ${s}</span>`; })()} <span style="margin-left:8px"></span>Model: ${asset.model || 'N/A'} •
+                      Serial: ${asset.serial || 'N/A'} •
+                      <span style="color:${asset.criticality === 'High' ? '#e74c3c' : asset.criticality === 'Medium' ? '#f1c40f' : '#2ecc71'}">${asset.criticality}</span> criticality •
                       ${asset.pm_cadence} PM
                     </div>
+                  </div>
+                  <div class="flex gap-1">
+                    <button class="btn small primary" onclick="event.stopPropagation(); app.editAsset('${asset.asset_id}')">Edit</button>
+                    <button class="btn small" style="background:#e74c3c;color:#fff" onclick="event.stopPropagation(); app.deleteAsset('${asset.asset_id}')">Delete</button>
                   </div>
                 </div>
               </div>
@@ -3353,7 +3369,136 @@ ${q.totalDiscount > 0 ? `
     this.toast('Asset added!');
     this.showScreen('assets');
   },
-  
+
+  editAsset(assetId) {
+    const asset = db.getAsset(assetId);
+    if (!asset) return;
+    const location = db.getLocation(asset.location_id);
+    const client = location ? db.getClient(location.client_id) : null;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.innerHTML = `
+      <div class="card" style="max-width:500px;width:100%;max-height:90vh;overflow-y:auto">
+        <div class="card-header flex-between">
+          <h2>Edit Asset</h2>
+          <button class="btn small" onclick="this.closest('.modal-overlay').remove()">X</button>
+        </div>
+        <div class="card-body">
+          <form id="edit-asset-form" onsubmit="app.saveEditedAsset(event, '${assetId}')">
+            <div class="form-group">
+              <label class="form-label">Client</label>
+              <input type="text" class="form-control" value="${client?.name || 'Unknown'}" disabled>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Location</label>
+              <input type="text" class="form-control" value="${location?.name || 'Unknown'}" disabled>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Category *</label>
+                <select id="edit-asset-category" class="form-control" required>
+                  <option value="Refrigeration" ${asset.category === 'Refrigeration' ? 'selected' : ''}>Refrigeration</option>
+                  <option value="HVAC" ${asset.category === 'HVAC' ? 'selected' : ''}>HVAC</option>
+                  <option value="Kitchen" ${asset.category === 'Kitchen' ? 'selected' : ''}>Kitchen Equipment</option>
+                  <option value="Electrical" ${asset.category === 'Electrical' ? 'selected' : ''}>Electrical & Controls</option>
+                  <option value="Plumbing/Facilities" ${asset.category === 'Plumbing/Facilities' ? 'selected' : ''}>Plumbing/Facilities</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Equipment Type *</label>
+                <input type="text" id="edit-asset-type" class="form-control" required value="${asset.type || ''}">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Manufacturer *</label>
+                <input type="text" id="edit-asset-manufacturer" class="form-control" required value="${asset.manufacturer || ''}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Model</label>
+                <input type="text" id="edit-asset-model" class="form-control" value="${asset.model || ''}">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Serial Number</label>
+                <input type="text" id="edit-asset-serial" class="form-control" value="${asset.serial || ''}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Approx. Age (years)</label>
+                <input type="number" id="edit-asset-age" class="form-control" min="0" step="1" value="${asset.age_years || ''}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Usage Level</label>
+                <select id="edit-asset-usage" class="form-control">
+                  <option value="Light" ${asset.usage_level === 'Light' ? 'selected' : ''}>Light</option>
+                  <option value="Normal" ${asset.usage_level === 'Normal' || !asset.usage_level ? 'selected' : ''}>Normal</option>
+                  <option value="Heavy" ${asset.usage_level === 'Heavy' ? 'selected' : ''}>Heavy</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Criticality *</label>
+                <select id="edit-asset-criticality" class="form-control" required>
+                  <option value="Low" ${asset.criticality === 'Low' ? 'selected' : ''}>Low</option>
+                  <option value="Medium" ${asset.criticality === 'Medium' ? 'selected' : ''}>Medium</option>
+                  <option value="High" ${asset.criticality === 'High' ? 'selected' : ''}>High</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">PM Cadence *</label>
+                <select id="edit-asset-cadence" class="form-control" required>
+                  <option value="Monthly" ${asset.pm_cadence === 'Monthly' ? 'selected' : ''}>Monthly</option>
+                  <option value="Quarterly" ${asset.pm_cadence === 'Quarterly' ? 'selected' : ''}>Quarterly</option>
+                  <option value="Bi-Annual" ${asset.pm_cadence === 'Bi-Annual' ? 'selected' : ''}>Bi-Annual</option>
+                  <option value="Annual" ${asset.pm_cadence === 'Annual' ? 'selected' : ''}>Annual</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notes</label>
+              <textarea id="edit-asset-notes" class="form-control">${asset.history_summary || ''}</textarea>
+            </div>
+            <button type="submit" class="btn gold">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  },
+
+  saveEditedAsset(e, assetId) {
+    e.preventDefault();
+    db.updateAsset(assetId, {
+      category: document.getElementById('edit-asset-category').value,
+      type: document.getElementById('edit-asset-type').value,
+      manufacturer: document.getElementById('edit-asset-manufacturer').value,
+      model: document.getElementById('edit-asset-model').value,
+      serial: document.getElementById('edit-asset-serial').value,
+      age_years: document.getElementById('edit-asset-age').value,
+      usage_level: document.getElementById('edit-asset-usage').value,
+      criticality: document.getElementById('edit-asset-criticality').value,
+      pm_cadence: document.getElementById('edit-asset-cadence').value,
+      history_summary: document.getElementById('edit-asset-notes').value
+    });
+    document.querySelector('.modal-overlay').remove();
+    this.toast('Asset updated!');
+    this.renderAssets();
+  },
+
+  deleteAsset(assetId) {
+    const asset = db.getAsset(assetId);
+    if (!asset) return;
+    if (!confirm(`Delete "${asset.type} - ${asset.manufacturer}"? This cannot be undone.`)) return;
+    db.removeAsset(assetId);
+    this.toast('Asset deleted');
+    this.renderAssets();
+  },
+
   loadSampleData() {
     if (!confirm('Load sample data? This will add test clients, locations, and assets.')) return;
     
