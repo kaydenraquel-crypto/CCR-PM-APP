@@ -325,6 +325,8 @@
       body:has(#packet-overlay) .app-header,
       body:has(#packet-overlay) .container{display:none!important}
       #packet-overlay{position:static!important;overflow:visible!important;height:auto!important}
+      /* Keep bordered boxes / sections together on a page */
+      #packet-overlay div[style*="border"]{page-break-inside:avoid;break-inside:avoid}
     }
 
     /* Make packet overlay text readable — override inline grey colors */
