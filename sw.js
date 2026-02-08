@@ -1,5 +1,5 @@
-// CCR PM Playbook — Service Worker v1
-const CACHE_NAME = 'ccr-pm-playbook-v1';
+// CCR PM Playbook — Service Worker v2
+const CACHE_NAME = 'ccr-pm-playbook-v2';
 
 // Files to cache on install
 const PRECACHE_URLS = [

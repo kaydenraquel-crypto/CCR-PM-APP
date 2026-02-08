@@ -268,6 +268,47 @@
     }
     .list-item-title{font-weight:700; font-size:14px; margin-bottom:4px}
     .list-item-meta{font-size:12px; color:rgba(255,255,255,.65)}
+
+    /* Client dashboard */
+    .stat-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+      gap:10px;
+      margin:12px 0 6px;
+    }
+    .stat-box{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      border-radius:12px;
+      padding:12px;
+    }
+    .stat-box h4{margin:0 0 4px 0; font-size:12px; color:rgba(255,255,255,.7); text-transform:uppercase; letter-spacing:.4px}
+    .stat-box .stat-value{font-size:20px; font-weight:700}
+    .location-card{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      border-radius:12px;
+      margin-bottom:12px;
+      overflow:hidden;
+    }
+    .location-toggle{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 14px;
+      background:rgba(255,255,255,.02);
+      border:0;
+      color:#fff;
+      text-align:left;
+      cursor:pointer;
+    }
+    .location-toggle h3{margin:0; font-size:14px}
+    .location-toggle .text-small{margin-top:4px}
+    .location-assets{display:none; padding:12px 14px; border-top:1px solid var(--line)}
+    .location-card.open .location-assets{display:block}
+    .location-actions{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
     
     /* Empty state */
     .empty-state{
@@ -388,7 +429,7 @@
           <button class="btn primary" onclick="app.showScreen('pricing')">💰 Pricing Calculator</button>
           <button class="btn" onclick="app.showScreen('visits')">📋 View Visits</button>
           <button class="btn" onclick="app.showScreen('clients')">👥 Manage Clients</button>
-          <button class="btn" onclick="app.showScreen('assets')">🔧 Manage Assets</button>
+          <button class="btn" onclick="app.showScreen('clients')">🔧 Manage Assets</button>
         </div>
       </div>
     </div>
@@ -432,6 +473,21 @@
       </div>
       <div class="card-body">
         <div id="clients-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENT DETAIL SCREEN -->
+  <div id="screen-client-detail" class="screen">
+    <div class="card">
+      <div class="card-header">
+        <h2>Client Dashboard</h2>
+        <div class="flex gap-1">
+          <button class="btn small" onclick="app.showScreen('clients')">← Back</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="client-detail"></div>
       </div>
     </div>
   </div>
@@ -496,7 +552,7 @@
     <div class="card">
       <div class="card-header">
         <h2>Add Location</h2>
-        <button class="btn small" onclick="app.showScreen('clients')">← Cancel</button>
+        <button class="btn small" onclick="app.cancelAddLocation()">← Cancel</button>
       </div>
       <div class="card-body">
         <form id="add-location-form" onsubmit="app.saveLocation(event)">
@@ -528,7 +584,18 @@
               <input type="text" id="location-hours" class="form-control" placeholder="Mon-Sun 6am-10pm">
             </div>
           </div>
-          
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Distance from Shop (Miles)</label>
+              <input type="number" id="location-distance" class="form-control" min="0" step="1" value="10">
+            </div>
+            <div class="form-group">
+              <label class="form-label">City / Coverage Area</label>
+              <input type="text" id="location-city" class="form-control" placeholder="e.g., Grand Junction, CO">
+            </div>
+          </div>
+
           <div class="form-group">
             <label class="form-label">Notes</label>
             <textarea id="location-notes" class="form-control" placeholder="Parking, special access, site contact..."></textarea>
@@ -561,7 +628,7 @@
     <div class="card">
       <div class="card-header">
         <h2>Add Asset</h2>
-        <button class="btn small" onclick="app.showScreen('assets')">← Cancel</button>
+        <button class="btn small" onclick="app.cancelAddAsset()">← Cancel</button>
       </div>
       <div class="card-body">
         <form id="add-asset-form" onsubmit="app.saveAsset(event)">
@@ -594,7 +661,74 @@
             
             <div class="form-group">
               <label class="form-label">Equipment Type *</label>
-              <input type="text" id="asset-type" class="form-control" required placeholder="e.g., Walk-in Cooler, RTU, Fryer">
+              <select id="asset-type" class="form-control" required>
+                <option value="">Select Equipment Type</option>
+                <optgroup label="Refrigeration">
+                  <option>Walk-in Cooler</option>
+                  <option>Walk-in Freezer</option>
+                  <option>Reach-in Refrigerator (1-door)</option>
+                  <option>Reach-in Refrigerator (2-door)</option>
+                  <option>Reach-in Refrigerator (3-door)</option>
+                  <option>Reach-in Freezer (1-door)</option>
+                  <option>Reach-in Freezer (2-door)</option>
+                  <option>Reach-in Freezer (3-door)</option>
+                  <option>Under-counter Refrigerator</option>
+                  <option>Under-counter Freezer</option>
+                  <option>Ice Machine (&lt; 500 lb/day)</option>
+                  <option>Ice Machine (500-1000 lb/day)</option>
+                  <option>Ice Machine (&gt; 1000 lb/day)</option>
+                  <option>Display Case (Refrigerated)</option>
+                  <option>Prep Table (Refrigerated)</option>
+                  <option>Beer System (Glycol)</option>
+                  <option>Blast Chiller/Freezer</option>
+                </optgroup>
+                <optgroup label="Cooking Equipment">
+                  <option>Fryer (Single-Vat)</option>
+                  <option>Fryer (Double-Vat)</option>
+                  <option>Flat-top Griddle (36-inch)</option>
+                  <option>Flat-top Griddle (48-inch)</option>
+                  <option>Charbroiler (Gas)</option>
+                  <option>Range (6-burner)</option>
+                  <option>Range (8-burner)</option>
+                  <option>Convection Oven (Single)</option>
+                  <option>Convection Oven (Double-Stack)</option>
+                  <option>Pizza Oven (Deck)</option>
+                  <option>Pizza Oven (Conveyor)</option>
+                  <option>Combi Oven</option>
+                  <option>Steamer (Countertop)</option>
+                  <option>Steamer (Floor Model)</option>
+                  <option>Salamander Broiler</option>
+                  <option>Smoker (Commercial)</option>
+                </optgroup>
+                <optgroup label="Warewashing">
+                  <option>Dishwasher (Under-counter)</option>
+                  <option>Dishwasher (Door-type High-Temp)</option>
+                  <option>Dishwasher (Door-type Low-Temp)</option>
+                  <option>Dishwasher (Conveyor)</option>
+                  <option>Glasswasher</option>
+                  <option>3-Compartment Sink System</option>
+                  <option>Pot &amp; Pan Washer</option>
+                </optgroup>
+                <optgroup label="HVAC">
+                  <option>Rooftop Unit (RTU) &lt; 5 tons</option>
+                  <option>Rooftop Unit (RTU) 5-10 tons</option>
+                  <option>Rooftop Unit (RTU) &gt; 10 tons</option>
+                  <option>Mini-Split System (Single-Zone)</option>
+                  <option>Mini-Split System (Multi-Zone)</option>
+                  <option>Exhaust Hood &amp; Makeup Air</option>
+                  <option>Walk-in Cooler Condensing Unit</option>
+                  <option>Walk-in Freezer Condensing Unit</option>
+                </optgroup>
+                <optgroup label="Specialty Equipment">
+                  <option>Coffee Machine (Commercial Espresso)</option>
+                  <option>Soda Fountain System</option>
+                  <option>Water Filtration System</option>
+                  <option>Grease Trap</option>
+                  <option>Food Warmer (Steam Table)</option>
+                  <option>Heat Lamp/Warmer</option>
+                  <option>Microwave (Commercial)</option>
+                </optgroup>
+              </select>
             </div>
           </div>
           
@@ -794,8 +928,8 @@
       <div class="card-body">
         <div class="form-group">
           <label class="form-label">Base Rate per ASU per Year</label>
-          <input type="number" id="config-base-rate" class="form-control" value="110" min="50" max="200" step="5">
-          <p class="text-small mt-1">Recommended: $95-$125. Current: <span id="current-base-rate">$110</span></p>
+          <input type="number" id="config-base-rate" class="form-control" value="115" min="50" max="200" step="5">
+          <p class="text-small mt-1">Recommended: $95-$125. Current: <span id="current-base-rate">$115</span></p>
         </div>
 
         <div class="hr"></div>
@@ -834,35 +968,33 @@
           <strong>Asset Service Units (ASU) Reference</strong>
           <div class="mt-1" style="font-size:12px; color:rgba(255,255,255,.7)">
             <div class="flex-between" style="padding:6px 0; border-bottom:1px solid var(--line)">
-              <span>Walk-in Cooler/Freezer</span><span>4.0 ASU</span>
+              <span>Dishwasher (Conveyor)</span><span>5.0 ASU</span>
             </div>
             <div class="flex-between" style="padding:6px 0; border-bottom:1px solid var(--line)">
-              <span>RTU / HVAC System</span><span>4.0 ASU</span>
+              <span>Walk-in Freezer / Combi Oven</span><span>4.5 ASU</span>
             </div>
             <div class="flex-between" style="padding:6px 0; border-bottom:1px solid var(--line)">
-              <span>Ice Machine</span><span>3.0 ASU</span>
+              <span>Walk-in Cooler / RTU > 10 tons</span><span>4.0 ASU</span>
             </div>
             <div class="flex-between" style="padding:6px 0; border-bottom:1px solid var(--line)">
-              <span>Combi Oven</span><span>3.0 ASU</span>
+              <span>Beer System / Smoker / RTU 5-10 tons</span><span>3.5 ASU</span>
             </div>
             <div class="flex-between" style="padding:6px 0; border-bottom:1px solid var(--line)">
-              <span>Electrical Panel</span><span>3.0 ASU</span>
+              <span>Ice Machine (med) / Blast Chiller / Exhaust Hood</span><span>3.0 ASU</span>
             </div>
             <div class="flex-between" style="padding:6px 0; border-bottom:1px solid var(--line)">
-              <span>Reach-in / Prep Cooler</span><span>2.0 ASU</span>
+              <span>Reach-in Refrigerator / Fryer / Range</span><span>1.5 – 2.8 ASU</span>
             </div>
             <div class="flex-between" style="padding:6px 0; border-bottom:1px solid var(--line)">
-              <span>Fryer / Range</span><span>2.0 ASU</span>
+              <span>Griddle / Steamer / Dishwasher (std)</span><span>1.5 – 3.0 ASU</span>
             </div>
             <div class="flex-between" style="padding:6px 0; border-bottom:1px solid var(--line)">
-              <span>Dishwasher</span><span>2.0 ASU</span>
-            </div>
-            <div class="flex-between" style="padding:6px 0; border-bottom:1px solid var(--line)">
-              <span>Exhaust / Make-up Air</span><span>2.0 ASU</span>
+              <span>Under-counter / Water Filtration</span><span>1.0 – 1.5 ASU</span>
             </div>
             <div class="flex-between" style="padding:6px 0">
-              <span>Floor Drain / Facility Fixture</span><span>1.0 ASU</span>
+              <span>Heat Lamp / 3-Comp Sink / Microwave</span><span>0.5 – 0.8 ASU</span>
             </div>
+            <div style="margin-top:6px; font-size:11px; color:rgba(255,255,255,.5)">50+ equipment types supported. Full ASU values in equipment dropdown.</div>
           </div>
         </div>
         
@@ -935,9 +1067,10 @@
             <div class="form-group">
               <label class="form-label">Travel Zone *</label>
               <select id="quote-travel" class="form-control" required>
-                <option value="1.0">Same City</option>
-                <option value="1.1">Multi-town</option>
-                <option value="1.25">Regional (Western Slope)</option>
+                <option value="0">Zone 1: Local ($0)</option>
+                <option value="95">Zone 2: Regional ($95/visit)</option>
+                <option value="250">Zone 3: Remote ($250/visit)</option>
+                <option value="350">Zone 4: Ultra Remote ($350/visit)</option>
               </select>
             
           <div class="form-row">
@@ -1091,9 +1224,10 @@
             <div class="form-group">
               <label class="form-label">Travel Zone *</label>
               <select id="quote-travel" class="form-control" required>
-                <option value="Same City">Same City (1.0x)</option>
-                <option value="Multi-town">Multi-town (1.1x)</option>
-                <option value="Regional">Regional - Western Slope (1.25x)</option>
+                <option value="Zone 1">Zone 1: Local ($0)</option>
+                <option value="Zone 2">Zone 2: Regional ($95/visit)</option>
+                <option value="Zone 3">Zone 3: Remote ($250/visit)</option>
+                <option value="Zone 4">Zone 4: Ultra Remote ($350/visit)</option>
               </select>
             </div>
           </div>
@@ -1162,7 +1296,7 @@
       <div class="card-body">
         <div class="form-group">
           <label class="form-label">Base Rate ($/ASU/Year)</label>
-          <input type="number" id="setting-base-rate" class="form-control" value="110" min="50" max="200" step="5" onchange="app.savePricingSettings()">
+          <input type="number" id="setting-base-rate" class="form-control" value="115" min="50" max="200" step="5" onchange="app.savePricingSettings()">
           <p class="text-small mt-1">Recommended: $95-$125. This is your money lever.</p>
         </div>
 
@@ -1265,7 +1399,7 @@ const db = {
   visits: [],
   quotes: [],
   config: {
-    baseRate: 110, // $ per ASU per year
+    baseRate: 115, // $ per ASU per year
     consumables: {
       essentials: 0,
       uptime_plus: 50,
@@ -1283,7 +1417,7 @@ const db = {
         this.assets = parsed.assets || [];
         this.visits = parsed.visits || [];
         this.quotes = parsed.quotes || [];
-        this.config = Object.assign({ baseRate: 110, consumables: { essentials: 0, uptime_plus: 50, mission_critical: 100 } }, parsed.config || {});
+        this.config = Object.assign({ baseRate: 115, consumables: { essentials: 0, uptime_plus: 50, mission_critical: 100 } }, parsed.config || {});
         // Ensure nested defaults
         this.config.consumables = Object.assign({ essentials: 0, uptime_plus: 50, mission_critical: 100 }, (parsed.config && parsed.config.consumables) ? parsed.config.consumables : (this.config.consumables || {}));
       }
@@ -1384,6 +1518,38 @@ const db = {
     this.save();
   },
 
+  updateClient(clientId, updates) {
+    const idx = this.clients.findIndex(c => c.client_id === clientId);
+    if (idx === -1) return null;
+    Object.assign(this.clients[idx], updates);
+    this.save();
+    return this.clients[idx];
+  },
+
+  updateLocation(locationId, updates) {
+    const idx = this.locations.findIndex(l => l.location_id === locationId);
+    if (idx === -1) return null;
+    Object.assign(this.locations[idx], updates);
+    this.save();
+    return this.locations[idx];
+  },
+
+  removeClient(clientId) {
+    const locations = this.locations.filter(l => l.client_id === clientId);
+    locations.forEach(loc => {
+      this.assets = this.assets.filter(a => a.location_id !== loc.location_id);
+    });
+    this.locations = this.locations.filter(l => l.client_id !== clientId);
+    this.clients = this.clients.filter(c => c.client_id !== clientId);
+    this.save();
+  },
+
+  removeLocation(locationId) {
+    this.assets = this.assets.filter(a => a.location_id !== locationId);
+    this.locations = this.locations.filter(l => l.location_id !== locationId);
+    this.save();
+  },
+
   generateId() {
     return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
@@ -1396,25 +1562,61 @@ const db = {
 const PRICING = {
   // Asset Service Units (ASU) - complexity weight per asset type
   ASU_WEIGHTS: {
-    'Walk-in Cooler/Freezer': 4.0,
-    'Reach-in Refrigerator': 2.0,
-    'Prep Table Cooler': 2.0,
-    'Ice Machine': 3.0,
-    'Combi Oven': 3.0,
-    'Fryer': 2.0,
-    'Range/Oven': 2.0,
-    'Griddle/Flat Top': 2.0,
-    'Dishwasher': 2.0,
-    'RTU (Rooftop Unit)': 4.0,
-    'Split System HVAC': 4.0,
-    'Electrical Panel': 3.0,
-    'Control Cabinet': 3.0,
-    'Exhaust Hood': 2.0,
-    'Make-up Air Unit': 2.0,
-    'Floor Drain System': 1.0,
-    'Grease Trap': 1.0,
-    'Water Heater': 2.0,
-    'Other Equipment': 2.0
+    'Walk-in Cooler': 4.0,
+    'Walk-in Freezer': 4.5,
+    'Reach-in Refrigerator (1-door)': 1.5,
+    'Reach-in Refrigerator (2-door)': 2.0,
+    'Reach-in Refrigerator (3-door)': 2.5,
+    'Reach-in Freezer (1-door)': 1.8,
+    'Reach-in Freezer (2-door)': 2.3,
+    'Reach-in Freezer (3-door)': 2.8,
+    'Under-counter Refrigerator': 1.2,
+    'Under-counter Freezer': 1.5,
+    'Ice Machine (< 500 lb/day)': 2.0,
+    'Ice Machine (500-1000 lb/day)': 3.0,
+    'Ice Machine (> 1000 lb/day)': 4.0,
+    'Display Case (Refrigerated)': 2.5,
+    'Prep Table (Refrigerated)': 1.8,
+    'Beer System (Glycol)': 3.5,
+    'Blast Chiller/Freezer': 3.0,
+    'Fryer (Single-Vat)': 2.0,
+    'Fryer (Double-Vat)': 2.8,
+    'Flat-top Griddle (36-inch)': 1.5,
+    'Flat-top Griddle (48-inch)': 2.0,
+    'Charbroiler (Gas)': 1.8,
+    'Range (6-burner)': 1.5,
+    'Range (8-burner)': 2.0,
+    'Convection Oven (Single)': 2.5,
+    'Convection Oven (Double-Stack)': 3.5,
+    'Pizza Oven (Deck)': 3.0,
+    'Pizza Oven (Conveyor)': 4.0,
+    'Combi Oven': 4.5,
+    'Steamer (Countertop)': 1.8,
+    'Steamer (Floor Model)': 2.5,
+    'Salamander Broiler': 1.0,
+    'Smoker (Commercial)': 3.5,
+    'Dishwasher (Under-counter)': 2.0,
+    'Dishwasher (Door-type High-Temp)': 3.0,
+    'Dishwasher (Door-type Low-Temp)': 2.8,
+    'Dishwasher (Conveyor)': 5.0,
+    'Glasswasher': 1.8,
+    '3-Compartment Sink System': 0.5,
+    'Pot & Pan Washer': 3.5,
+    'Rooftop Unit (RTU) < 5 tons': 2.5,
+    'Rooftop Unit (RTU) 5-10 tons': 3.5,
+    'Rooftop Unit (RTU) > 10 tons': 4.5,
+    'Mini-Split System (Single-Zone)': 1.5,
+    'Mini-Split System (Multi-Zone)': 2.5,
+    'Exhaust Hood & Makeup Air': 3.0,
+    'Walk-in Cooler Condensing Unit': 2.0,
+    'Walk-in Freezer Condensing Unit': 2.5,
+    'Coffee Machine (Commercial Espresso)': 2.5,
+    'Soda Fountain System': 1.5,
+    'Water Filtration System': 1.0,
+    'Grease Trap': 1.5,
+    'Food Warmer (Steam Table)': 1.0,
+    'Heat Lamp/Warmer': 0.5,
+    'Microwave (Commercial)': 0.8
   },
   
   // Service frequency multipliers
@@ -1449,7 +1651,7 @@ const PRICING = {
   
   // Minimum contract values
   MIN_MONTHLY_PER_LOCATION: 350,
-  MIN_ANNUAL_PER_LOCATION: 2500
+  MIN_ANNUAL_PER_LOCATION: 600
 };
 
 // ============================================================================
@@ -1512,17 +1714,86 @@ const READING_TYPES = {
 // ============================================================================
 
 const ASU_WEIGHTS = {
-  'Walk-in Cooler/Freezer': 4.0,
-  'Reach-in / Prep Cooler': 2.0,
-  'Ice Machine': 3.0,
-  'Combi Oven': 3.0,
-  'Fryer / Range': 2.0,
-  'Dishwasher': 2.0,
-  'RTU / HVAC System': 4.0,
-  'Electrical Panel / Control Cabinet': 3.0,
-  'Exhaust / Make-up Air': 2.0,
-  'Floor Drain / Facility Fixture': 1.0
+  // REFRIGERATION
+  'Walk-in Cooler': 4.0,
+  'Walk-in Freezer': 4.5,
+  'Reach-in Refrigerator (1-door)': 1.5,
+  'Reach-in Refrigerator (2-door)': 2.0,
+  'Reach-in Refrigerator (3-door)': 2.5,
+  'Reach-in Freezer (1-door)': 1.8,
+  'Reach-in Freezer (2-door)': 2.3,
+  'Reach-in Freezer (3-door)': 2.8,
+  'Under-counter Refrigerator': 1.2,
+  'Under-counter Freezer': 1.5,
+  'Ice Machine (< 500 lb/day)': 2.0,
+  'Ice Machine (500-1000 lb/day)': 3.0,
+  'Ice Machine (> 1000 lb/day)': 4.0,
+  'Display Case (Refrigerated)': 2.5,
+  'Prep Table (Refrigerated)': 1.8,
+  'Beer System (Glycol)': 3.5,
+  'Blast Chiller/Freezer': 3.0,
+
+  // COOKING
+  'Fryer (Single-Vat)': 2.0,
+  'Fryer (Double-Vat)': 2.8,
+  'Flat-top Griddle (36-inch)': 1.5,
+  'Flat-top Griddle (48-inch)': 2.0,
+  'Charbroiler (Gas)': 1.8,
+  'Range (6-burner)': 1.5,
+  'Range (8-burner)': 2.0,
+  'Convection Oven (Single)': 2.5,
+  'Convection Oven (Double-Stack)': 3.5,
+  'Pizza Oven (Deck)': 3.0,
+  'Pizza Oven (Conveyor)': 4.0,
+  'Combi Oven': 4.5,
+  'Steamer (Countertop)': 1.8,
+  'Steamer (Floor Model)': 2.5,
+  'Salamander Broiler': 1.0,
+  'Smoker (Commercial)': 3.5,
+
+  // WAREWASHING
+  'Dishwasher (Under-counter)': 2.0,
+  'Dishwasher (Door-type High-Temp)': 3.0,
+  'Dishwasher (Door-type Low-Temp)': 2.8,
+  'Dishwasher (Conveyor)': 5.0,
+  'Glasswasher': 1.8,
+  '3-Compartment Sink System': 0.5,
+  'Pot & Pan Washer': 3.5,
+
+  // HVAC
+  'Rooftop Unit (RTU) < 5 tons': 2.5,
+  'Rooftop Unit (RTU) 5-10 tons': 3.5,
+  'Rooftop Unit (RTU) > 10 tons': 4.5,
+  'Mini-Split System (Single-Zone)': 1.5,
+  'Mini-Split System (Multi-Zone)': 2.5,
+  'Exhaust Hood & Makeup Air': 3.0,
+  'Walk-in Cooler Condensing Unit': 2.0,
+  'Walk-in Freezer Condensing Unit': 2.5,
+
+  // SPECIALTY
+  'Coffee Machine (Commercial Espresso)': 2.5,
+  'Soda Fountain System': 1.5,
+  'Water Filtration System': 1.0,
+  'Grease Trap': 1.5,
+  'Food Warmer (Steam Table)': 1.0,
+  'Heat Lamp/Warmer': 0.5,
+  'Microwave (Commercial)': 0.8
 };
+
+const NICHE_EQUIPMENT = [
+  'Beer System (Glycol)',
+  'Blast Chiller/Freezer',
+  'Pizza Oven (Conveyor)',
+  'Combi Oven',
+  'Dishwasher (Conveyor)',
+  'Pot & Pan Washer',
+  'Coffee Machine (Commercial Espresso)',
+  'Smoker (Commercial)'
+];
+
+function isNicheEquipment(equipmentType) {
+  return NICHE_EQUIPMENT.some(niche => equipmentType.includes(niche));
+}
 
 const FREQUENCY_MULTIPLIERS = {
   'Annual': 1.0,
@@ -1537,10 +1808,11 @@ const SLA_MULTIPLIERS = {
   'Guaranteed': 1.6
 };
 
-const TRAVEL_FACTORS = {
-  'Same City': 1.0,
-  'Multi-town': 1.1,
-  'Regional': 1.25
+const TRAVEL_ZONES = {
+  'Zone 1': 0,
+  'Zone 2': 95,
+  'Zone 3': 250,
+  'Zone 4': 350
 };
 
 const TERM_DISCOUNTS = {
@@ -1560,6 +1832,243 @@ function getLocationComplexityFactor(locationCount) {
   if (locationCount <= 7) return 1.10;
   if (locationCount <= 15) return 1.20;
   return 1.35;
+}
+
+// ============================================================================
+// CCR PRICING ENGINE (Kris's Business Model)
+// Cost = PM_Labor + Travel_Time + Mileage + Parts
+// Contract = Cost × 1.65
+// ============================================================================
+
+const PRICING_RATES = {
+  pm_labor_rate: 125,        // $/hour for PM work
+  travel_time_rate: 100,     // $/hour for travel time
+  mileage_rate: 0.70,        // $/mile
+  margin_multiplier: 1.65,   // Contract price = Cost × 1.65
+  avg_driving_speed: 55      // mph for travel time calculation
+};
+
+const EQUIPMENT_SERVICE_TIME = {
+  // REFRIGERATION
+  'Walk-in Cooler': 1.25,
+  'Walk-in Freezer': 1.5,
+  'Reach-in Refrigerator (1-door)': 0.5,
+  'Reach-in Refrigerator (2-door)': 0.75,
+  'Reach-in Refrigerator (3-door)': 1.0,
+  'Reach-in Freezer (1-door)': 0.58,
+  'Reach-in Freezer (2-door)': 0.83,
+  'Reach-in Freezer (3-door)': 1.08,
+  'Under-counter Refrigerator': 0.42,
+  'Under-counter Freezer': 0.5,
+  'Ice Machine (< 500 lb/day)': 1.0,
+  'Ice Machine (500-1000 lb/day)': 1.5,
+  'Ice Machine (> 1000 lb/day)': 2.0,
+  'Display Case (Refrigerated)': 0.75,
+  'Prep Table (Refrigerated)': 0.58,
+  'Beer System (Glycol)': 1.5,
+  'Blast Chiller/Freezer': 1.25,
+  // COOKING
+  'Fryer (Single-Vat)': 0.75,
+  'Fryer (Double-Vat)': 1.0,
+  'Flat-top Griddle (36-inch)': 0.5,
+  'Flat-top Griddle (48-inch)': 0.67,
+  'Charbroiler (Gas)': 0.58,
+  'Range (6-burner)': 0.5,
+  'Range (8-burner)': 0.67,
+  'Convection Oven (Single)': 0.83,
+  'Convection Oven (Double-Stack)': 1.17,
+  'Pizza Oven (Deck)': 1.0,
+  'Pizza Oven (Conveyor)': 1.5,
+  'Combi Oven': 2.0,
+  'Steamer (Countertop)': 0.58,
+  'Steamer (Floor Model)': 0.83,
+  'Salamander Broiler': 0.33,
+  'Smoker (Commercial)': 1.25,
+  // WAREWASHING
+  'Dishwasher (Under-counter)': 1.0,
+  'Dishwasher (Door-type High-Temp)': 1.5,
+  'Dishwasher (Door-type Low-Temp)': 1.42,
+  'Dishwasher (Conveyor)': 2.5,
+  'Glasswasher': 0.83,
+  '3-Compartment Sink System': 0.25,
+  'Pot & Pan Washer': 1.5,
+  // HVAC
+  'Rooftop Unit (RTU) < 5 tons': 1.0,
+  'Rooftop Unit (RTU) 5-10 tons': 1.5,
+  'Rooftop Unit (RTU) > 10 tons': 2.0,
+  'Mini-Split System (Single-Zone)': 0.67,
+  'Mini-Split System (Multi-Zone)': 1.17,
+  'Exhaust Hood & Makeup Air': 1.25,
+  'Walk-in Cooler Condensing Unit': 0.75,
+  'Walk-in Freezer Condensing Unit': 1.0,
+  // SPECIALTY
+  'Coffee Machine (Commercial Espresso)': 1.0,
+  'Soda Fountain System': 0.67,
+  'Water Filtration System': 0.5,
+  'Grease Trap': 0.75,
+  'Food Warmer (Steam Table)': 0.33,
+  'Heat Lamp/Warmer': 0.25,
+  'Microwave (Commercial)': 0.33
+};
+
+const PARTS_ALLOWANCE = {
+  'Refrigeration': { 'Monthly': 30, 'Quarterly': 40, 'Bi-Annual': 50, 'Annual': 60 },
+  'Cooking': { 'Monthly': 20, 'Quarterly': 30, 'Bi-Annual': 40, 'Annual': 50 },
+  'Warewashing': { 'Monthly': 35, 'Quarterly': 45, 'Bi-Annual': 60, 'Annual': 75 },
+  'HVAC': { 'Monthly': 40, 'Quarterly': 50, 'Bi-Annual': 70, 'Annual': 90 },
+  'Specialty': { 'Monthly': 25, 'Quarterly': 35, 'Bi-Annual': 45, 'Annual': 60 }
+};
+
+const EQUIPMENT_CATEGORY = {
+  'Walk-in Cooler': 'Refrigeration',
+  'Walk-in Freezer': 'Refrigeration',
+  'Reach-in Refrigerator (1-door)': 'Refrigeration',
+  'Reach-in Refrigerator (2-door)': 'Refrigeration',
+  'Reach-in Refrigerator (3-door)': 'Refrigeration',
+  'Reach-in Freezer (1-door)': 'Refrigeration',
+  'Reach-in Freezer (2-door)': 'Refrigeration',
+  'Reach-in Freezer (3-door)': 'Refrigeration',
+  'Under-counter Refrigerator': 'Refrigeration',
+  'Under-counter Freezer': 'Refrigeration',
+  'Ice Machine (< 500 lb/day)': 'Refrigeration',
+  'Ice Machine (500-1000 lb/day)': 'Refrigeration',
+  'Ice Machine (> 1000 lb/day)': 'Refrigeration',
+  'Display Case (Refrigerated)': 'Refrigeration',
+  'Prep Table (Refrigerated)': 'Refrigeration',
+  'Beer System (Glycol)': 'Refrigeration',
+  'Blast Chiller/Freezer': 'Refrigeration',
+  'Fryer (Single-Vat)': 'Cooking',
+  'Fryer (Double-Vat)': 'Cooking',
+  'Flat-top Griddle (36-inch)': 'Cooking',
+  'Flat-top Griddle (48-inch)': 'Cooking',
+  'Charbroiler (Gas)': 'Cooking',
+  'Range (6-burner)': 'Cooking',
+  'Range (8-burner)': 'Cooking',
+  'Convection Oven (Single)': 'Cooking',
+  'Convection Oven (Double-Stack)': 'Cooking',
+  'Pizza Oven (Deck)': 'Cooking',
+  'Pizza Oven (Conveyor)': 'Cooking',
+  'Combi Oven': 'Cooking',
+  'Steamer (Countertop)': 'Cooking',
+  'Steamer (Floor Model)': 'Cooking',
+  'Salamander Broiler': 'Cooking',
+  'Smoker (Commercial)': 'Cooking',
+  'Dishwasher (Under-counter)': 'Warewashing',
+  'Dishwasher (Door-type High-Temp)': 'Warewashing',
+  'Dishwasher (Door-type Low-Temp)': 'Warewashing',
+  'Dishwasher (Conveyor)': 'Warewashing',
+  'Glasswasher': 'Warewashing',
+  '3-Compartment Sink System': 'Warewashing',
+  'Pot & Pan Washer': 'Warewashing',
+  'Rooftop Unit (RTU) < 5 tons': 'HVAC',
+  'Rooftop Unit (RTU) 5-10 tons': 'HVAC',
+  'Rooftop Unit (RTU) > 10 tons': 'HVAC',
+  'Mini-Split System (Single-Zone)': 'HVAC',
+  'Mini-Split System (Multi-Zone)': 'HVAC',
+  'Exhaust Hood & Makeup Air': 'HVAC',
+  'Walk-in Cooler Condensing Unit': 'HVAC',
+  'Walk-in Freezer Condensing Unit': 'HVAC',
+  'Coffee Machine (Commercial Espresso)': 'Specialty',
+  'Soda Fountain System': 'Specialty',
+  'Water Filtration System': 'Specialty',
+  'Grease Trap': 'Specialty',
+  'Food Warmer (Steam Table)': 'Specialty',
+  'Heat Lamp/Warmer': 'Specialty',
+  'Microwave (Commercial)': 'Specialty'
+};
+
+function calculateLocationPrice(location) {
+  const assets = db.getAssetsByLocation(location.location_id);
+  if (assets.length === 0) {
+    return { cost_per_visit: 0, contract_price_per_visit: 0, visits_per_year: 0, annual_cost: 0, annual_contract: 0, monthly_contract: 0 };
+  }
+
+  // STEP 1: PM Labor Hours per visit
+  let pmHoursPerVisit = 0;
+  assets.forEach(asset => {
+    const serviceTime = EQUIPMENT_SERVICE_TIME[asset.type] || 1.0;
+    pmHoursPerVisit += serviceTime * (asset.quantity || 1);
+  });
+
+  // STEP 2: Travel Time (round trip)
+  const miles = parseFloat(location.distance_miles || 0);
+  const roundTripMiles = miles * 2;
+  const travelHours = roundTripMiles / PRICING_RATES.avg_driving_speed;
+
+  // STEP 3: Parts Allowance
+  let partsAllowance = 0;
+  assets.forEach(asset => {
+    const category = EQUIPMENT_CATEGORY[asset.type] || 'Specialty';
+    const frequency = asset.pm_cadence || 'Quarterly';
+    const allowance = (PARTS_ALLOWANCE[category] && PARTS_ALLOWANCE[category][frequency]) || 40;
+    partsAllowance += allowance * (asset.quantity || 1);
+  });
+
+  // STEP 4: Cost Per Visit
+  const pmLaborCost = pmHoursPerVisit * PRICING_RATES.pm_labor_rate;
+  const travelTimeCost = travelHours * PRICING_RATES.travel_time_rate;
+  const mileageCost = roundTripMiles * PRICING_RATES.mileage_rate;
+  const costPerVisit = pmLaborCost + travelTimeCost + mileageCost + partsAllowance;
+
+  // STEP 5: Apply Margin Multiplier
+  const contractPricePerVisit = costPerVisit * PRICING_RATES.margin_multiplier;
+
+  // STEP 6: Visits Per Year (highest frequency wins)
+  const VISITS_PER_YEAR = { 'Monthly': 12, 'Quarterly': 4, 'Bi-Annual': 2, 'Annual': 1 };
+  let visitsPerYear = 1;
+  assets.forEach(asset => {
+    const v = VISITS_PER_YEAR[asset.pm_cadence] || 4;
+    if (v > visitsPerYear) visitsPerYear = v;
+  });
+
+  // STEP 7: Annual Contract
+  const annualCost = costPerVisit * visitsPerYear;
+  const annualContract = contractPricePerVisit * visitsPerYear;
+
+  return {
+    pm_hours: Math.round(pmHoursPerVisit * 100) / 100,
+    pm_labor_cost: Math.round(pmLaborCost * 100) / 100,
+    travel_hours: Math.round(travelHours * 100) / 100,
+    travel_time_cost: Math.round(travelTimeCost * 100) / 100,
+    round_trip_miles: roundTripMiles,
+    mileage_cost: Math.round(mileageCost * 100) / 100,
+    parts_allowance: Math.round(partsAllowance * 100) / 100,
+    cost_per_visit: Math.round(costPerVisit * 100) / 100,
+    margin_multiplier: PRICING_RATES.margin_multiplier,
+    contract_price_per_visit: Math.round(contractPricePerVisit * 100) / 100,
+    visits_per_year: visitsPerYear,
+    annual_cost: Math.round(annualCost * 100) / 100,
+    annual_contract: Math.round(annualContract * 100) / 100,
+    monthly_contract: Math.round((annualContract / 12) * 100) / 100,
+    annual_profit: Math.round((annualContract - annualCost) * 100) / 100,
+    profit_margin: annualContract > 0 ? Math.round(((annualContract - annualCost) / annualContract) * 10000) / 100 : 0
+  };
+}
+
+function calculateClientTotal(clientId) {
+  const locations = db.getLocationsByClient(clientId);
+  let totalAnnualCost = 0;
+  let totalAnnualContract = 0;
+
+  const locationBreakdowns = locations.map(loc => {
+    const pricing = calculateLocationPrice(loc);
+    totalAnnualCost += pricing.annual_cost;
+    totalAnnualContract += pricing.annual_contract;
+    return { location: loc, pricing };
+  });
+
+  const monthlyContract = totalAnnualContract / 12;
+  const totalProfit = totalAnnualContract - totalAnnualCost;
+
+  return {
+    annual_cost: Math.round(totalAnnualCost * 100) / 100,
+    annual_contract: Math.round(totalAnnualContract * 100) / 100,
+    monthly_contract: Math.round(monthlyContract * 100) / 100,
+    annual_profit: Math.round(totalProfit * 100) / 100,
+    profit_margin: totalAnnualContract > 0 ? Math.round((totalProfit / totalAnnualContract) * 10000) / 100 : 0,
+    location_count: locations.length,
+    locations: locationBreakdowns
+  };
 }
 
 // ============================================================================
@@ -2097,6 +2606,7 @@ const app = {
   currentVisit: null,
   visitStartTime: null,
   timerInterval: null,
+  _dashboardClientId: null,
   
   init() {
     db.load();
@@ -2121,20 +2631,31 @@ const app = {
     return { label: 'Low', cls: 'risk-low' };
   },
 
-  
+  getServiceZone(miles) {
+    if (miles <= 30) return { name: 'Zone 1 - Local', rate: 0, color: '#2ecc71' };
+    if (miles <= 80) return { name: 'Zone 2 - Regional', rate: 95, color: '#3498db' };
+    if (miles <= 150) return { name: 'Zone 3 - Remote', rate: 250, color: '#f39c12' };
+    return { name: 'Zone 4 - Ultra', rate: 350, color: '#e74c3c' };
+  },
+
   showScreen(screenName) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(`screen-${screenName}`).classList.add('active');
+
+    if (['home', 'clients', 'assets', 'visits', 'pricing', 'schedule-optimizer', 'setup'].includes(screenName)) {
+      this._dashboardClientId = null;
+    }
     
     // Render screen-specific content
     if (screenName === 'home') this.renderHome();
     if (screenName === 'clients') this.renderClients();
+    if (screenName === 'client-detail') this.renderClientDetail(this._dashboardClientId);
     if (screenName === 'assets') this.renderAssets();
     if (screenName === 'visits') this.renderVisits();
     if (screenName === 'pricing') this.renderQuotes();
     if (screenName === 'pricing-config') {
       // Populate pricing configuration fields
-      const base = db.config.baseRate || 110;
+    const base = db.config.baseRate || 115;
       document.getElementById('config-base-rate').value = base;
       document.getElementById('current-base-rate').textContent = '$' + base;
 
@@ -2199,7 +2720,7 @@ const app = {
       const locations = db.getLocationsByClient(client.client_id);
       const contractMode = client.contract_mode || 'contract';
       return `
-        <div class="card" style="margin-bottom:12px">
+        <div class="card" style="margin-bottom:12px; cursor:pointer" onclick="app.showClientDetail('${client.client_id}')">
           <div class="card-header flex-between">
             <div>
               <h2>${client.name}</h2>
@@ -2211,9 +2732,10 @@ const app = {
                 </span>
               </div>
             </div>
-            <div class="flex gap-1">
-              <button class="btn small gold" onclick="app.showClientPacket('${client.client_id}')">📄 Client Packet</button>
-              <button class="btn small primary" onclick="app.showAddLocationFor('${client.client_id}')">+ Add Location</button>
+            <div class="flex gap-1 flex-wrap">
+              <button class="btn small" onclick="event.stopPropagation(); app.editClient('${client.client_id}')">Edit</button>
+              <button class="btn small gold" onclick="event.stopPropagation(); app.showClientPacket('${client.client_id}')">📄 Client Packet</button>
+              <button class="btn small primary" onclick="event.stopPropagation(); app.showAddLocationFor('${client.client_id}')">+ Add Location</button>
             </div>
           </div>
           <div class="card-body">
@@ -2236,6 +2758,141 @@ const app = {
         </div>
       `;
     }).join('');
+  },
+
+  showClientDetail(clientId) {
+    this._dashboardClientId = clientId;
+    this.showScreen('client-detail');
+  },
+
+  renderClientDetail(clientId) {
+    const container = document.getElementById('client-detail');
+    if (!clientId) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><p>Select a client to view details.</p></div>';
+      return;
+    }
+
+    const client = db.getClient(clientId);
+    if (!client) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><p>Client not found.</p></div>';
+      return;
+    }
+
+    const locations = db.getLocationsByClient(clientId);
+    const assets = locations.flatMap(loc => db.getAssetsByLocation(loc.location_id));
+    const highPriority = assets.filter(a => a.criticality === 'High').length;
+    const monthlyPm = assets.filter(a => a.pm_cadence === 'Monthly').length;
+    const contractMode = client.contract_mode || 'contract';
+
+    container.innerHTML = `
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-body">
+          <div class="flex-between flex-wrap gap-2">
+            <div>
+              <h2 style="margin:0">${client.name}</h2>
+              <div class="text-small">
+                ${client.billing_contact ? `📧 ${client.billing_contact}` : ''}
+                ${client.ops_contact ? ` • Ops: ${client.ops_contact}` : ''}
+                ${client.preferred_contact_method ? ` • Prefers: ${client.preferred_contact_method}` : ''}
+                <span class="pill ${contractMode === 'contract' ? 'teal' : 'gold'}" style="margin-left:8px">
+                  ${contractMode === 'contract' ? 'Contract' : 'T&M'}
+                </span>
+              </div>
+            </div>
+            <div class="flex gap-1 flex-wrap">
+              <button class="btn small" onclick="app.editClient('${client.client_id}')">Edit Client</button>
+              <button class="btn small gold" onclick="app.showClientPacket('${client.client_id}')">📄 Client Packet</button>
+              <button class="btn small primary" onclick="app.showAddLocationFor('${client.client_id}')">+ Add Location</button>
+              <button class="btn small" onclick="app.showAddAssetForClient('${client.client_id}')">+ Add Asset</button>
+              <button class="btn small danger" onclick="app.deleteClient('${client.client_id}')">Delete Client</button>
+            </div>
+          </div>
+          ${client.notes ? `<p class="text-small mt-1"><strong>Notes:</strong> ${client.notes}</p>` : ''}
+          <div class="stat-grid">
+            <div class="stat-box">
+              <h4>Locations</h4>
+              <div class="stat-value">${locations.length}</div>
+            </div>
+            <div class="stat-box">
+              <h4>Assets</h4>
+              <div class="stat-value">${assets.length}</div>
+            </div>
+            <div class="stat-box">
+              <h4>High Priority</h4>
+              <div class="stat-value">${highPriority}</div>
+            </div>
+            <div class="stat-box">
+              <h4>Monthly PM</h4>
+              <div class="stat-value">${monthlyPm}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      ${locations.length === 0 ? `
+        <div class="empty-state">
+          <div class="empty-state-icon">📍</div>
+          <p>No locations yet. Add a location to start tracking assets.</p>
+        </div>
+      ` : locations.map((loc, index) => {
+        const locAssets = db.getAssetsByLocation(loc.location_id);
+        const isOpen = index === 0 ? 'open' : '';
+        const locMiles = Math.max(0, parseFloat(loc.distance_miles || 0) || 0);
+        const locZone = app.getServiceZone(locMiles);
+        return `
+          <div class="location-card ${isOpen}" id="location-card-${loc.location_id}">
+            <button class="location-toggle" onclick="app.toggleLocationCard('${loc.location_id}')">
+              <div>
+                <h3>${loc.name}</h3>
+                <div class="text-small">
+                  ${loc.address ? `📍 ${loc.address}` : ''}
+                  ${loc.hours ? ` • 🕐 ${loc.hours}` : ''}
+                  <span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:${locZone.color}22;color:${locZone.color};border:1px solid ${locZone.color}55;margin-left:6px">🚛 ${locZone.name}${locMiles > 0 ? ` - ${locMiles} mi` : ''}</span>
+                  ${locAssets.length ? ` • ${locAssets.length} assets` : ''}
+                </div>
+              </div>
+              <div class="text-small">Toggle</div>
+            </button>
+            <div class="location-assets">
+              <div class="location-actions">
+                <button class="btn small primary" onclick="app.showAddAssetForLocation('${client.client_id}', '${loc.location_id}')">+ Add Asset</button>
+                <button class="btn small" onclick="app.editLocation('${loc.location_id}')">Edit Location</button>
+                <button class="btn small" style="background:#e74c3c;color:#fff" onclick="app.deleteLocation('${loc.location_id}', '${client.client_id}')">Delete Location</button>
+              </div>
+              ${locAssets.length === 0 ? `
+                <div class="text-small mt-1">No assets at this location yet.</div>
+              ` : locAssets.map(asset => `
+                <div class="list-item" style="margin-top:8px">
+                  <div class="flex-between">
+                    <div>
+                      <div class="list-item-title">${asset.type} - ${asset.manufacturer}</div>
+                      <div class="list-item-meta">
+                        <span class="pill ${asset.category === 'Refrigeration' ? 'teal' : ''}">${asset.category}</span>
+                        ${(() => { const s = app.calcRisk(asset); const b = app.riskBand(s); return `<span class="risk-pill ${b.cls}">Risk ${b.label} • ${s}</span>`; })()}
+                        <span style="margin-left:8px"></span>
+                        Model: ${asset.model || 'N/A'} • Serial: ${asset.serial || 'N/A'} •
+                        <span style="color:${asset.criticality === 'High' ? '#e74c3c' : asset.criticality === 'Medium' ? '#f1c40f' : '#2ecc71'}">${asset.criticality}</span> criticality •
+                        ${asset.pm_cadence} PM
+                      </div>
+                    </div>
+                    <div class="flex gap-1">
+                      <button class="btn small primary" onclick="event.stopPropagation(); app.editAsset('${asset.asset_id}')">Edit</button>
+                      <button class="btn small" style="background:#e74c3c;color:#fff" onclick="event.stopPropagation(); app.deleteAssetFromDashboard('${asset.asset_id}', '${client.client_id}')">Delete</button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
+  },
+
+  toggleLocationCard(locationId) {
+    const card = document.getElementById(`location-card-${locationId}`);
+    if (!card) return;
+    card.classList.toggle('open');
   },
   
   renderAssets() {
@@ -3040,14 +3697,14 @@ const app = {
       totalASU += asu;
     });
     
-    // Get multipliers
+    // Get multipliers / factors
     const locations = parseInt(document.getElementById('quote-locations').value);
     const slaMultiplier = parseFloat(document.getElementById('quote-sla').value);
-    const travelMultiplier = parseFloat(document.getElementById('quote-travel').value);
+    const travelZoneRate = parseFloat(document.getElementById('quote-travel').value);
     const locationFactor = PRICING.getLocationFactor(locations);
     const termDiscount = parseInt(document.getElementById('quote-term').value);
     const paymentDiscount = parseInt(document.getElementById('quote-payment').value);
-    const baseRate = db.config.baseRate || 110;
+    const baseRate = db.config.baseRate || 115;
 
     // Plan tier + consumables allowance
     const planTier = (document.getElementById('quote-tier') && document.getElementById('quote-tier').value) ? document.getElementById('quote-tier').value : 'uptime_plus';
@@ -3060,11 +3717,11 @@ const app = {
       const v = freqToVisits[a.frequency] || 1;
       if (v > baseVisitsPerYear) baseVisitsPerYear = v;
     });
-    // Mission-Critical includes monthly checks + quarterly deep PM (16 visits/year/location)
-    const visitsPerYear = (planTier === 'mission_critical') ? 16 : baseVisitsPerYear;
+    // Mission-Critical requires a 12-visit/year minimum
+    const visitsPerYear = (planTier === 'mission_critical') ? Math.max(12, baseVisitsPerYear) : baseVisitsPerYear;
 
     // Calculate PM labor portion (annual)
-    let annualPerLocationPM = totalASU * baseRate * slaMultiplier * travelMultiplier * locationFactor;
+    let annualPerLocationPM = totalASU * baseRate * slaMultiplier * locationFactor;
     let portfolioAnnualPM = annualPerLocationPM * locations;
 
     // Apply discounts to PM labor portion (protects allowance recovery)
@@ -3073,17 +3730,22 @@ const app = {
       portfolioAnnualPM = portfolioAnnualPM * (1 - totalDiscount / 100);
     }
 
-    // Check minimums (PM portion)
-    const minAnnualPM = PRICING.MIN_ANNUAL_PER_LOCATION * locations;
-    if (portfolioAnnualPM < minAnnualPM) {
-      portfolioAnnualPM = minAnnualPM;
-    }
-
     // Consumables allowance (annual)
     const annualAllowance = allowancePerVisit * visitsPerYear * locations;
 
+    // Travel surcharge (annual)
+    const annualTravelSurcharge = visitsPerYear * travelZoneRate * locations;
+
     // Total program investment (annual + monthly)
-    const totalAnnual = portfolioAnnualPM + annualAllowance;
+    let totalAnnual = portfolioAnnualPM + annualTravelSurcharge + annualAllowance;
+
+    // Stop-loss minimum per location
+    const minAnnualPerLocation = PRICING.MIN_ANNUAL_PER_LOCATION + (travelZoneRate * visitsPerYear);
+    const minAnnualTotal = minAnnualPerLocation * locations;
+    if (totalAnnual < minAnnualTotal) {
+      totalAnnual = minAnnualTotal;
+    }
+
     const monthly = totalAnnual / 12;
     const minMonthly = PRICING.MIN_MONTHLY_PER_LOCATION * locations;
 // Store current quote
@@ -3100,7 +3762,7 @@ const app = {
 
       baseRate: baseRate,
       slaMultiplier: slaMultiplier,
-      travelMultiplier: travelMultiplier,
+      travelZoneRate: travelZoneRate,
       locationFactor: locationFactor,
       termDiscount: termDiscount,
       paymentDiscount: paymentDiscount,
@@ -3108,6 +3770,7 @@ const app = {
 
       annualPerLocationPM: annualPerLocationPM,
       annualPM: Math.round(portfolioAnnualPM),
+      annualTravelSurcharge: Math.round(annualTravelSurcharge),
       annualAllowance: Math.round(annualAllowance),
       annual: Math.round(totalAnnual),
       monthly: Math.round(monthly),
@@ -3186,6 +3849,10 @@ const app = {
             <div style="text-align:center; padding:15px; background:#f7f7f7; border-radius:8px">
               <div style="color:#666; font-size:13px; margin-bottom:5px">Annual PM Services (Labor)</div>
               <div style="font-size:22px; font-weight:bold; color:#0F4C5C">$${(q.annualPM||0).toLocaleString()}</div>
+            </div>
+            <div style="text-align:center; padding:15px; background:#f7f7f7; border-radius:8px">
+              <div style="color:#666; font-size:13px; margin-bottom:5px">Travel & Logistics (${q.travel})</div>
+              <div style="font-size:22px; font-weight:bold; color:#0F4C5C">$${(q.annualTravelSurcharge||0).toLocaleString()}</div>
             </div>
             <div style="text-align:center; padding:15px; background:#f7f7f7; border-radius:8px">
               <div style="color:#666; font-size:13px; margin-bottom:5px">Included Consumables Coverage</div>
@@ -3302,7 +3969,7 @@ ${q.totalDiscount > 0 ? `
     if (e3) db.config.consumables.mission_critical = parseFloat(e3.value || '100');
 
     db.save();
-    document.getElementById('current-base-rate').textContent = '$' + (db.config.baseRate || 110);
+    document.getElementById('current-base-rate').textContent = '$' + (db.config.baseRate || 115);
     this.toast('Pricing settings saved!');
   },
   
@@ -3324,10 +3991,49 @@ ${q.totalDiscount > 0 ? `
   },
   
   showAddLocationFor(clientId) {
+    this._dashboardClientId = clientId;
     this.showScreen('add-location');
     const select = document.getElementById('location-client');
     select.innerHTML = '<option value="">Select Client</option>' + 
       db.clients.map(c => `<option value="${c.client_id}" ${c.client_id === clientId ? 'selected' : ''}>${c.name}</option>`).join('');
+  },
+
+  showAddAssetForClient(clientId) {
+    this._dashboardClientId = clientId;
+    this.showScreen('add-asset');
+    const clientSelect = document.getElementById('asset-client');
+    if (clientSelect) {
+      clientSelect.value = clientId;
+      this.loadLocationsForAsset();
+    }
+  },
+
+  showAddAssetForLocation(clientId, locationId) {
+    this._dashboardClientId = clientId;
+    this.showScreen('add-asset');
+    const clientSelect = document.getElementById('asset-client');
+    if (clientSelect) {
+      clientSelect.value = clientId;
+      this.loadLocationsForAsset();
+      const locationSelect = document.getElementById('asset-location');
+      if (locationSelect) locationSelect.value = locationId;
+    }
+  },
+
+  cancelAddLocation() {
+    if (this._dashboardClientId) {
+      this.showScreen('client-detail');
+    } else {
+      this.showScreen('clients');
+    }
+  },
+
+  cancelAddAsset() {
+    if (this._dashboardClientId) {
+      this.showScreen('client-detail');
+    } else {
+      this.showScreen('assets');
+    }
   },
   
   saveLocation(e) {
@@ -3339,12 +4045,18 @@ ${q.totalDiscount > 0 ? `
       address: document.getElementById('location-address').value,
       access_instructions: document.getElementById('location-access').value,
       hours: document.getElementById('location-hours').value,
+      distance_miles: parseFloat(document.getElementById('location-distance').value || '0') || 0,
+      city: document.getElementById('location-city').value,
       notes: document.getElementById('location-notes').value
     });
     
     document.getElementById('add-location-form').reset();
     this.toast('Location added!');
-    this.showScreen('clients');
+    if (this._dashboardClientId) {
+      this.showScreen('client-detail');
+    } else {
+      this.showScreen('clients');
+    }
   },
   
   loadLocationsForAsset() {
@@ -3380,7 +4092,11 @@ ${q.totalDiscount > 0 ? `
     
     document.getElementById('add-asset-form').reset();
     this.toast('Asset added!');
-    this.showScreen('assets');
+    if (this._dashboardClientId) {
+      this.showScreen('client-detail');
+    } else {
+      this.showScreen('assets');
+    }
   },
 
   editAsset(assetId) {
@@ -3421,7 +4137,10 @@ ${q.totalDiscount > 0 ? `
               </div>
               <div class="form-group">
                 <label class="form-label">Equipment Type *</label>
-                <input type="text" id="edit-asset-type" class="form-control" required value="${asset.type || ''}">
+                <select id="edit-asset-type" class="form-control" required>
+                  ${Object.keys(ASU_WEIGHTS).map(t => `<option value="${t}" ${asset.type === t ? 'selected' : ''}>${t}</option>`).join('')}
+                  ${!ASU_WEIGHTS[asset.type] ? `<option value="${asset.type}" selected>${asset.type}</option>` : ''}
+                </select>
               </div>
             </div>
             <div class="form-row">
@@ -3500,7 +4219,21 @@ ${q.totalDiscount > 0 ? `
     });
     document.querySelector('.modal-overlay').remove();
     this.toast('Asset updated!');
-    this.renderAssets();
+    if (document.getElementById('screen-client-detail').classList.contains('active')) {
+      this.renderClientDetail(this._dashboardClientId);
+    } else {
+      this.renderAssets();
+    }
+  },
+
+  deleteAssetFromDashboard(assetId, clientId) {
+    const asset = db.getAsset(assetId);
+    if (!asset) return;
+    if (!confirm(`Delete "${asset.type} - ${asset.manufacturer}"? This cannot be undone.`)) return;
+    db.removeAsset(assetId);
+    this.toast('Asset deleted');
+    this._dashboardClientId = clientId;
+    this.renderClientDetail(clientId);
   },
 
   deleteAsset(assetId) {
@@ -3510,6 +4243,181 @@ ${q.totalDiscount > 0 ? `
     db.removeAsset(assetId);
     this.toast('Asset deleted');
     this.renderAssets();
+  },
+
+  editClient(clientId) {
+    const client = db.getClient(clientId);
+    if (!client) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.innerHTML = `
+      <div class="card" style="max-width:500px;width:100%;max-height:90vh;overflow-y:auto">
+        <div class="card-header flex-between">
+          <h2>Edit Client</h2>
+          <button class="btn small" onclick="this.closest('.modal-overlay').remove()">X</button>
+        </div>
+        <div class="card-body">
+          <form id="edit-client-form" onsubmit="app.saveEditedClient(event, '${clientId}')">
+            <div class="form-group">
+              <label class="form-label">Client Name *</label>
+              <input type="text" id="edit-client-name" class="form-control" required value="${(client.name || '').replace(/"/g, '&quot;')}">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Billing Contact</label>
+                <input type="text" id="edit-client-billing" class="form-control" value="${(client.billing_contact || '').replace(/"/g, '&quot;')}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Operations Contact</label>
+                <input type="text" id="edit-client-ops" class="form-control" value="${(client.ops_contact || '').replace(/"/g, '&quot;')}">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Preferred Contact Method</label>
+                <select id="edit-client-contact-method" class="form-control">
+                  <option value="call" ${client.preferred_contact_method === 'call' ? 'selected' : ''}>Call</option>
+                  <option value="text" ${client.preferred_contact_method === 'text' ? 'selected' : ''}>Text</option>
+                  <option value="email" ${client.preferred_contact_method === 'email' ? 'selected' : ''}>Email</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contract Mode</label>
+                <select id="edit-client-contract-mode" class="form-control">
+                  <option value="contract" ${(client.contract_mode || 'contract') === 'contract' ? 'selected' : ''}>Contract</option>
+                  <option value="tm" ${client.contract_mode === 'tm' ? 'selected' : ''}>T&M</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notes</label>
+              <textarea id="edit-client-notes" class="form-control">${client.notes || ''}</textarea>
+            </div>
+            <button type="submit" class="btn gold">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  },
+
+  saveEditedClient(e, clientId) {
+    e.preventDefault();
+    db.updateClient(clientId, {
+      name: document.getElementById('edit-client-name').value,
+      billing_contact: document.getElementById('edit-client-billing').value,
+      ops_contact: document.getElementById('edit-client-ops').value,
+      preferred_contact_method: document.getElementById('edit-client-contact-method').value,
+      contract_mode: document.getElementById('edit-client-contract-mode').value,
+      notes: document.getElementById('edit-client-notes').value
+    });
+    document.querySelector('.modal-overlay').remove();
+    this.toast('Client updated!');
+    if (document.getElementById('screen-client-detail').classList.contains('active')) {
+      this.renderClientDetail(this._dashboardClientId);
+    } else {
+      this.renderClients();
+    }
+  },
+
+  editLocation(locationId) {
+    const location = db.getLocation(locationId);
+    if (!location) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.innerHTML = `
+      <div class="card" style="max-width:500px;width:100%;max-height:90vh;overflow-y:auto">
+        <div class="card-header flex-between">
+          <h2>Edit Location</h2>
+          <button class="btn small" onclick="this.closest('.modal-overlay').remove()">X</button>
+        </div>
+        <div class="card-body">
+          <form id="edit-location-form" onsubmit="app.saveEditedLocation(event, '${locationId}')">
+            <div class="form-group">
+              <label class="form-label">Location Name *</label>
+              <input type="text" id="edit-location-name" class="form-control" required value="${(location.name || '').replace(/"/g, '&quot;')}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Address *</label>
+              <textarea id="edit-location-address" class="form-control" required>${location.address || ''}</textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Access Instructions</label>
+              <input type="text" id="edit-location-access" class="form-control" value="${(location.access_instructions || '').replace(/"/g, '&quot;')}">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Hours</label>
+                <input type="text" id="edit-location-hours" class="form-control" value="${(location.hours || '').replace(/"/g, '&quot;')}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Distance from Shop (miles)</label>
+                <input type="number" id="edit-location-distance" class="form-control" min="0" step="1" value="${location.distance_miles || ''}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">City / Coverage Area</label>
+              <input type="text" id="edit-location-city" class="form-control" value="${(location.city || '').replace(/"/g, '&quot;')}" placeholder="e.g., Grand Junction, CO">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notes</label>
+              <textarea id="edit-location-notes" class="form-control">${location.notes || ''}</textarea>
+            </div>
+            <button type="submit" class="btn gold">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  },
+
+  saveEditedLocation(e, locationId) {
+    e.preventDefault();
+    db.updateLocation(locationId, {
+      name: document.getElementById('edit-location-name').value,
+      address: document.getElementById('edit-location-address').value,
+      access_instructions: document.getElementById('edit-location-access').value,
+      hours: document.getElementById('edit-location-hours').value,
+      distance_miles: document.getElementById('edit-location-distance').value,
+      city: document.getElementById('edit-location-city').value,
+      notes: document.getElementById('edit-location-notes').value
+    });
+    document.querySelector('.modal-overlay').remove();
+    this.toast('Location updated!');
+    if (document.getElementById('screen-client-detail').classList.contains('active')) {
+      this.renderClientDetail(this._dashboardClientId);
+    } else {
+      this.renderClients();
+    }
+  },
+
+  deleteClient(clientId) {
+    const client = db.getClient(clientId);
+    if (!client) return;
+    const locations = db.getLocationsByClient(clientId);
+    const assets = locations.flatMap(loc => db.getAssetsByLocation(loc.location_id));
+    if (!confirm(`Delete "${client.name}" and all its ${locations.length} location(s) and ${assets.length} asset(s)? This cannot be undone.`)) return;
+    db.removeClient(clientId);
+    this.toast('Client deleted');
+    this._dashboardClientId = null;
+    this.showScreen('clients');
+  },
+
+  deleteLocation(locationId, clientId) {
+    const location = db.getLocation(locationId);
+    if (!location) return;
+    const assets = db.getAssetsByLocation(locationId);
+    if (!confirm(`Delete "${location.name}" and its ${assets.length} asset(s)? This cannot be undone.`)) return;
+    db.removeLocation(locationId);
+    this.toast('Location deleted');
+    this._dashboardClientId = clientId;
+    this.renderClientDetail(clientId);
   },
 
   loadSampleData() {
@@ -3726,7 +4634,7 @@ ${q.totalDiscount > 0 ? `
           db.assets = data.assets || [];
           db.visits = data.visits || [];
           db.quotes = data.quotes || [];
-          db.config = data.config || { baseRate: 110 };
+          db.config = data.config || { baseRate: 115 };
           db.save();
           
           this.toast('Data imported!');
@@ -3979,41 +4887,29 @@ ${q.totalDiscount > 0 ? `
   },
   
   mapAssetToQuoteType(asset) {
-    // Map PM app asset types to pricing asset types
-    const mapping = {
-      'Walk-in Cooler': 'Walk-in Cooler/Freezer',
-      'Walk-in Freezer': 'Walk-in Cooler/Freezer',
-      'Reach-in': 'Reach-in / Prep Cooler',
-      'Prep Cooler': 'Reach-in / Prep Cooler',
-      'Ice Machine': 'Ice Machine',
-      'Combi Oven': 'Combi Oven',
-      'Fryer': 'Fryer / Range',
-      'Range': 'Fryer / Range',
-      'Dishwasher': 'Dishwasher',
-      'RTU': 'RTU / HVAC System',
-      'Rooftop Unit': 'RTU / HVAC System',
-      'Electrical Panel': 'Electrical Panel / Control Cabinet',
-      'Exhaust Hood': 'Exhaust / Make-up Air',
-      'Floor Drain': 'Floor Drain / Facility Fixture'
-    };
-    
-    // Try exact match first
-    if (mapping[asset.type]) return mapping[asset.type];
-    
-    // Fuzzy match
+    // Direct match against ASU_WEIGHTS catalog
+    if (ASU_WEIGHTS[asset.type]) return asset.type;
+
+    // Fuzzy match for legacy/custom types
     const type = asset.type.toLowerCase();
-    if (type.includes('walk-in')) return 'Walk-in Cooler/Freezer';
-    if (type.includes('reach-in')) return 'Reach-in / Prep Cooler';
-    if (type.includes('ice')) return 'Ice Machine';
+    if (type.includes('walk-in') && type.includes('freezer')) return 'Walk-in Freezer';
+    if (type.includes('walk-in')) return 'Walk-in Cooler';
+    if (type.includes('reach-in') && type.includes('freezer')) return 'Reach-in Freezer (2-door)';
+    if (type.includes('reach-in')) return 'Reach-in Refrigerator (2-door)';
+    if (type.includes('prep')) return 'Prep Table (Refrigerated)';
+    if (type.includes('ice')) return 'Ice Machine (500-1000 lb/day)';
     if (type.includes('combi')) return 'Combi Oven';
-    if (type.includes('fryer') || type.includes('range')) return 'Fryer / Range';
-    if (type.includes('dish')) return 'Dishwasher';
-    if (type.includes('rtu') || type.includes('rooftop') || type.includes('hvac')) return 'RTU / HVAC System';
-    if (type.includes('panel')) return 'Electrical Panel / Control Cabinet';
-    if (type.includes('exhaust')) return 'Exhaust / Make-up Air';
-    
+    if (type.includes('fryer')) return 'Fryer (Single-Vat)';
+    if (type.includes('range')) return 'Range (6-burner)';
+    if (type.includes('dish')) return 'Dishwasher (Door-type High-Temp)';
+    if (type.includes('rtu') || type.includes('rooftop')) return 'Rooftop Unit (RTU) 5-10 tons';
+    if (type.includes('mini-split') || type.includes('split')) return 'Mini-Split System (Single-Zone)';
+    if (type.includes('exhaust') || type.includes('make-up') || type.includes('makeup')) return 'Exhaust Hood & Makeup Air';
+    if (type.includes('panel') || type.includes('electrical')) return 'Rooftop Unit (RTU) < 5 tons';
+    if (type.includes('drain') || type.includes('grease')) return 'Grease Trap';
+
     // Default
-    return 'Reach-in / Prep Cooler';
+    return asset.type;
   },
   
   calculateAndDisplayQuote(quoteData) {
@@ -4072,21 +4968,37 @@ ${q.totalDiscount > 0 ? `
     // Calculate pricing
     const baseRate = db.config.baseRate;
     const slaMultiplier = SLA_MULTIPLIERS[quoteData.sla] || 1.0;
-    const travelFactor = TRAVEL_FACTORS[quoteData.travel] || 1.0;
+    const travelZoneRate = TRAVEL_ZONES[quoteData.travel] || 0;
     const locationFactor = getLocationComplexityFactor(locationCount);
     const termDiscount = TERM_DISCOUNTS[quoteData.term.toString()] || 0.0;
     const paymentDiscount = PAYMENT_DISCOUNTS[quoteData.payment] || 0.0;
-    
-    const annualBase = totalASU * baseRate * slaMultiplier * travelFactor * locationFactor;
+
+    // Visits per year (highest frequency wins)
+    const freqToVisits = { 'Annual': 1, 'Bi-Annual': 2, 'Quarterly': 4, 'Monthly': 12 };
+    let visitsPerYear = 1;
+    (quoteData.assets || []).forEach(a => {
+      const v = freqToVisits[a.frequency] || 1;
+      if (v > visitsPerYear) visitsPerYear = v;
+    });
+
+    const annualBase = totalASU * baseRate * slaMultiplier * locationFactor;
     const termDiscountAmount = annualBase * termDiscount;
     const afterTermDiscount = annualBase - termDiscountAmount;
     const paymentDiscountAmount = afterTermDiscount * paymentDiscount;
-    const annualFinal = afterTermDiscount - paymentDiscountAmount;
-    const monthlyFinal = annualFinal / 12;
-    
-    // Enforce minimums
+    const discountedLabor = afterTermDiscount - paymentDiscountAmount;
+
+    const annualTravelSurcharge = visitsPerYear * travelZoneRate * locationCount;
+    let annualFinal = discountedLabor + annualTravelSurcharge;
+    let monthlyFinal = annualFinal / 12;
+
+    // Enforce minimums (stop-loss)
+    const minAnnualPerLocation = PRICING.MIN_ANNUAL_PER_LOCATION + (travelZoneRate * visitsPerYear);
+    const minAnnual = minAnnualPerLocation * locationCount;
+    if (annualFinal < minAnnual) {
+      annualFinal = minAnnual;
+      monthlyFinal = annualFinal / 12;
+    }
     const minMonthly = Math.max(350 * locationCount, monthlyFinal);
-    const minAnnual = Math.max(2500 * locationCount, annualFinal);
     
     // Save and display
     const quote = {
@@ -4096,12 +5008,14 @@ ${q.totalDiscount > 0 ? `
       breakdown,
       baseRate,
       slaMultiplier,
-      travelFactor,
+      travelZoneRate,
       locationFactor,
       termDiscount,
       paymentDiscount,
+      visitsPerYear,
+      annualTravelSurcharge,
       annualBase,
-      annualFinal: minAnnual,
+      annualFinal: annualFinal,
       monthlyFinal: minMonthly
     };
     
@@ -4214,6 +5128,10 @@ ${q.totalDiscount > 0 ? `
                 <td style="padding:6px 0; text-align:right">-$${((quote.annualBase - quote.annualBase * quote.termDiscount) * quote.paymentDiscount).toFixed(2)}</td>
               </tr>
             ` : ''}
+            <tr>
+              <td style="padding:6px 0">Travel & Logistics (${quote.travel}):</td>
+              <td style="padding:6px 0; text-align:right">$${(quote.annualTravelSurcharge || 0).toFixed(2)} / yr</td>
+            </tr>
             <tr style="border-top:2px solid #0F4C5C; font-size:18px; font-weight:bold">
               <td style="padding:12px 0">Annual Investment:</td>
               <td style="padding:12px 0; text-align:right; color:#0F4C5C">$${quote.annualFinal.toFixed(2)}</td>
@@ -4241,9 +5159,10 @@ ${q.totalDiscount > 0 ? `
           <ul style="margin:5px 0; padding-left:20px; font-size:11px; line-height:1.5">
             <li>Base Rate: $${quote.baseRate}/ASU/year</li>
             <li>Service Level Multiplier: ${quote.slaMultiplier}x (${quote.sla})</li>
-            <li>Travel Factor: ${quote.travelFactor}x (${quote.travel})</li>
+            <li>Travel & Logistics: $${quote.travelZoneRate || 0}/visit (${quote.travel})</li>
             <li>Location Complexity: ${quote.locationFactor}x (${quote.locationCount} location${quote.locationCount > 1 ? 's' : ''})</li>
             <li>Total Asset Service Units (ASU): ${quote.totalASU.toFixed(1)}</li>
+            <li>Visits Per Year (Highest Cadence): ${quote.visitsPerYear || 1}</li>
           </ul>
         </div>
         
@@ -4639,140 +5558,257 @@ ${q.totalDiscount > 0 ? `
           <h2 style="color:#0F4C5C; border-bottom:2px solid #F2B857; padding-bottom:10px">Investment Summary</h2>
           
           ${(() => {
-            // Calculate pricing for this client
+            const clientPricing = calculateClientTotal(clientId);
             const allAssets = locations.flatMap(loc => db.getAssetsByLocation(loc.location_id));
-            const slaLevel = 'Priority'; // Match SLA_MULTIPLIERS key
-            const travelZone = locations.length > 1 ? 'Multi-town' : 'Same City';
-            const contractTerm = '12'; // Match TERM_DISCOUNTS key
-            const paymentType = 'Monthly'; // Match PAYMENT_DISCOUNTS key
-            
-            // Calculate total ASU with fuzzy matching
-            let totalASU = 0;
-            allAssets.forEach(asset => {
-              // Fuzzy match asset type to ASU_WEIGHTS
-              let asuWeight = ASU_WEIGHTS[asset.type];
-              if (!asuWeight) {
-                // Try fuzzy matching
-                if (asset.type.includes('Walk-in')) asuWeight = ASU_WEIGHTS['Walk-in Cooler/Freezer'];
-                else if (asset.type.includes('Reach-in') || asset.type.includes('Prep')) asuWeight = ASU_WEIGHTS['Reach-in / Prep Cooler'];
-                else if (asset.type.includes('Ice')) asuWeight = ASU_WEIGHTS['Ice Machine'];
-                else if (asset.type.includes('RTU') || asset.type.includes('Rooftop')) asuWeight = ASU_WEIGHTS['RTU / HVAC System'];
-                else if (asset.type.includes('Fryer') || asset.type.includes('Range')) asuWeight = ASU_WEIGHTS['Fryer / Range'];
-                else if (asset.type.includes('Combi') || asset.type.includes('Oven')) asuWeight = ASU_WEIGHTS['Combi Oven'];
-                else if (asset.type.includes('Dishwasher')) asuWeight = ASU_WEIGHTS['Dishwasher'];
-                else if (asset.type.includes('Exhaust') || asset.type.includes('Make-up')) asuWeight = ASU_WEIGHTS['Exhaust / Make-up Air'];
-                else if (asset.type.includes('Panel') || asset.type.includes('Electrical')) asuWeight = ASU_WEIGHTS['Electrical Panel / Control Cabinet'];
-                else if (asset.type.includes('Drain') || asset.type.includes('Fixture')) asuWeight = ASU_WEIGHTS['Floor Drain / Facility Fixture'];
-                else asuWeight = 2.0; // Default fallback
-              }
-              
-              const freqMult = FREQUENCY_MULTIPLIERS[asset.pm_cadence] || 3.0;
-              totalASU += asuWeight * freqMult;
-            });
-            
-            // Apply multipliers
-            const baseRate = db.config.baseRate || 110;
-            const slaMult = SLA_MULTIPLIERS[slaLevel] || 1.25;
-            const travelMult = TRAVEL_FACTORS[travelZone] || 1.0;
-            const locationMult = getLocationComplexityFactor(locations.length) || 1.0;
-            
-            let annualBase = totalASU * baseRate * slaMult * travelMult * locationMult;
-            
-            // Apply discounts
-            const termDiscount = TERM_DISCOUNTS[contractTerm] || 0.05;
-            const paymentDiscount = PAYMENT_DISCOUNTS[paymentType] || 0.0;
-            
-            annualBase = annualBase * (1 - termDiscount) * (1 - paymentDiscount);
-            const monthlyAmount = annualBase / 12;
-            
-            // Count visit types with fuzzy matching
-            const monthlyChecks = allAssets.filter(a => a.pm_cadence === 'Monthly').length * 12;
-            const quarterlyDeep = allAssets.length * 4;
-            const biannualService = allAssets.filter(asset => {
-              // Check if asset type suggests bi-annual service
-              return asset.type.includes('RTU') || asset.type.includes('Rooftop') ||
-                     asset.type.includes('HVAC') || asset.type.includes('Exhaust') ||
-                     asset.type.includes('Make-up') || asset.type.includes('Fryer') ||
-                     asset.type.includes('Range');
-            }).length * 2;
-            
-            // Validate calculations
-            if (isNaN(annualBase) || isNaN(monthlyAmount) || !isFinite(annualBase) || !isFinite(monthlyAmount)) {
-              console.error('Pricing calculation error:', {
-                totalASU,
-                baseRate,
-                slaMult,
-                travelMult,
-                locationMult,
-                termDiscount,
-                paymentDiscount,
-                annualBase,
-                monthlyAmount
+            const pluralize = (count, word) => count === 1 ? word : `${word}s`;
+            const totalAssetCount = allAssets.reduce((s, a) => s + (a.quantity || 1), 0);
+            // Determine visit cadence description
+            const cadenceVisits = { Monthly: 12, Quarterly: 4, 'Bi-Annual': 2, Annual: 1 };
+            const cadenceLabels = { Monthly: 'Monthly', Quarterly: 'Quarterly deep', 'Bi-Annual': 'Bi-Annual', Annual: 'Annual' };
+            let totalVisitsPerYear = 0;
+            let primaryCadence = 'Quarterly';
+            locations.forEach(loc => {
+              const locAssets = db.getAssetsByLocation(loc.location_id);
+              let highestVisits = 0;
+              locAssets.forEach(asset => {
+                const c = asset.pm_cadence || 'Quarterly';
+                const v = cadenceVisits[c] || 4;
+                if (v > highestVisits) { highestVisits = v; primaryCadence = c; }
               });
-              // Use fallback values
-              annualBase = 0;
-              monthlyAmount = 0;
-            }
-            
+              if (locAssets.length > 0) totalVisitsPerYear += highestVisits;
+            });
+            const hasHVAC = allAssets.some(a => (EQUIPMENT_CATEGORY[a.type] || '') === 'HVAC');
+
             return `
-              <div style="background:#f9f9f9; border:2px solid #0F4C5C; border-radius:12px; padding:30px; margin-top:20px">
-                <div style="text-align:center; margin-bottom:30px">
-                  <div style="font-size:14px; color:#666; margin-bottom:10px">Annual Program Investment</div>
-                  ${annualBase > 0 ? `
-                    <div style="font-size:42px; font-weight:bold; color:#0F4C5C; margin-bottom:5px">$${annualBase.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
-                    <div style="font-size:18px; color:#F2B857; font-weight:bold">$${monthlyAmount.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}/month</div>
-                  ` : `
-                    <div style="font-size:18px; color:#e74c3c; padding:20px; background:rgba(231,76,60,.1); border-radius:8px">
-                      <strong>Pricing calculation requires complete asset data.</strong><br>
-                      <span style="font-size:14px">Please ensure all assets have proper type and PM cadence set.</span>
-                    </div>
-                  `}
+              <div style="background:#f9f9f9; border:2px solid #0F4C5C; border-radius:12px; padding:40px 30px; margin-top:20px">
+                ${clientPricing.annual_contract > 0 ? `
+
+                <div style="text-align:center; margin-bottom:28px">
+                  <p style="margin:0 0 8px; font-size:14px; color:#666; text-transform:uppercase; letter-spacing:1px">Annual Service Agreement</p>
+                  <p style="margin:0; font-size:36px; font-weight:700; color:#0F4C5C">$${clientPricing.annual_contract.toFixed(2)}</p>
                 </div>
-                
-                <div style="border-top:1px solid #ddd; padding-top:20px">
-                  <h3 style="color:#0F4C5C; font-size:16px; margin:0 0 15px 0">Your Coverage Includes:</h3>
-                  <ul style="margin:0; padding-left:20px; line-height:2; color:#333; font-size:14px">
-                    ${monthlyChecks > 0 ? `<li><strong>${monthlyChecks}</strong> Monthly system checks (mission-critical assets)</li>` : ''}
-                    <li><strong>${quarterlyDeep}</strong> Quarterly deep preventive maintenance visits</li>
-                    ${biannualService > 0 ? `<li><strong>${biannualService}</strong> Seasonal HVAC service visits</li>` : ''}
-                    <li><strong>Priority 24-hour</strong> emergency response</li>
-                    <li>Digital compliance & service reports with operator guidance</li>
-                    <li>Asset health tracking & failure trend monitoring</li>
-                    <li>Equipment inventory management & documentation</li>
-                  </ul>
+
+                <div style="max-width:400px; margin:0 auto 28px">
+                  <div style="font-size:14px; color:#333; line-height:2.4">
+                    <div style="padding:2px 0">&#10003; <strong>${totalVisitsPerYear}</strong> ${cadenceLabels[primaryCadence]} PM ${pluralize(totalVisitsPerYear, 'visit')}</div>
+                    ${hasHVAC ? '<div style="padding:2px 0">&#10003; Seasonal HVAC service included</div>' : ''}
+                    <div style="padding:2px 0">&#10003; Priority 24-hour emergency response</div>
+                    <div style="padding:2px 0">&#10003; Digital compliance &amp; service reports</div>
+                    <div style="padding:2px 0">&#10003; Asset health tracking &amp; trend monitoring</div>
+                    <div style="padding:2px 0">&#10003; Complete parts &amp; consumables coverage</div>
+                  </div>
                 </div>
-              </div>
-              
-              <div style="background:rgba(231,76,60,.05); border:2px solid #e74c3c; border-radius:12px; padding:25px; margin-top:30px">
-                <h3 style="color:#e74c3c; font-size:16px; margin:0 0 15px 0">Cost of Doing Nothing (Typical Unplanned Downtime)</h3>
-                <table style="width:100%; font-size:13px; color:#333">
-                  <tr>
-                    <td style="padding:8px 0">Emergency service call:</td>
-                    <td style="padding:8px 0; text-align:right; font-weight:bold">$350 – $750</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 0">Lost food/product (single event):</td>
-                    <td style="padding:8px 0; text-align:right; font-weight:bold">$1,000 – $5,000+</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 0">Operational disruption:</td>
-                    <td style="padding:8px 0; text-align:right; font-weight:bold">Staff downtime, customer impact</td>
-                  </tr>
-                  <tr style="border-top:2px solid #e74c3c">
-                    <td style="padding:12px 0; font-size:14px"><strong>Total Risk Per Incident:</strong></td>
-                    <td style="padding:12px 0; text-align:right; font-weight:bold; font-size:16px; color:#e74c3c">$1,350 – $6,000+</td>
-                  </tr>
-                </table>
-                <p style="margin:15px 0 0; font-size:13px; color:#666; font-style:italic">
-                  This program is designed to reduce these events, not just respond to them. Regular maintenance catches problems before they become emergencies.
+
+                <div style="text-align:center; border-top:2px solid #F2B857; padding-top:24px; margin-bottom:28px">
+                  <p style="margin:0 0 6px; font-size:14px; color:#666; text-transform:uppercase; letter-spacing:1px">Monthly Investment</p>
+                  <p style="margin:0; font-size:30px; font-weight:700; color:#F2B857">$${clientPricing.monthly_contract.toFixed(2)}</p>
+                </div>
+
+                <p style="text-align:center; margin:0; font-size:14px; color:#555; line-height:1.7">
+                  Your coverage protects <strong>${totalAssetCount} critical ${pluralize(totalAssetCount, 'asset')}</strong> across <strong>${locations.length} ${pluralize(locations.length, 'location')}</strong><br>
+                  with comprehensive preventive maintenance and priority support.
                 </p>
+
+                ` : `
+                  <div style="text-align:center; font-size:18px; color:#e74c3c; padding:20px; background:rgba(231,76,60,.1); border-radius:8px">
+                    <strong>Pricing calculation requires complete asset data.</strong><br>
+                    <span style="font-size:14px">Please ensure all assets have proper type and PM cadence set.</span>
+                  </div>
+                `}
               </div>
+
+              ${(() => {
+                // Dynamic "Cost of Doing Nothing" - what reactive service actually costs the client
+                const SERVICE_CALL_RATE = 150;     // $/hr normal business hours
+                const EMERGENCY_RATE = 225;        // $/hr emergency/after-hours
+                const MILEAGE_RATE = 0.70;         // $/mile
+                const TRAVEL_SPEED = 50;           // mph avg for portal-to-portal travel
+                const REPAIR_MULTIPLIER = 2.0;     // Repairs take ~2x PM service time
+                const OPEX_MARGIN = 1.65;          // OpEx margin applied to service calls
+                const REACTIVE_PARTS_MULTIPLIER = 2.5; // Broken parts cost more than PM parts
+
+                // Usage-level multipliers for operational disruption
+                const USAGE_DISRUPTION = { Light: 0.6, Normal: 1.0, Heavy: 1.8 };
+
+                // Operational disruption/loss by category (per incident, base = Normal usage)
+                // These are COMMERCIAL operations - equipment runs all day, drives revenue
+                const DISRUPTION_RISK = {
+                  'Refrigeration': { low: 3000, high: 12000, label: 'Food spoilage, inventory loss & health code risk' },
+                  'Cooking':       { low: 2500, high: 10000, label: 'Lost revenue from menu items unavailable' },
+                  'Warewashing':   { low: 1500, high: 6000,  label: 'Health dept violation risk & operational shutdown' },
+                  'HVAC':          { low: 2000, high: 8000,  label: 'Customer loss, staff impact, or forced closure' },
+                  'Specialty':     { low: 800,  high: 3000,  label: 'Operational disruption & lost productivity' }
+                };
+
+                // Calculate full service call cost per asset (portal to portal × 1.65 OpEx margin)
+                const assetRisks = allAssets.map(a => {
+                  const repairHours = (EQUIPMENT_SERVICE_TIME[a.type] || 1.0) * REPAIR_MULTIPLIER;
+                  const category = EQUIPMENT_CATEGORY[a.type] || 'Specialty';
+                  const usage = a.usage_level || 'Normal';
+                  const loc = locations.find(l => l.location_id === a.location_id);
+                  const miles = parseFloat(loc?.distance_miles || 0);
+                  const roundTripMiles = miles * 2;
+                  const travelHours = roundTripMiles / TRAVEL_SPEED;
+
+                  // Parts for reactive repair
+                  const pmParts = (PARTS_ALLOWANCE[category] || PARTS_ALLOWANCE['Specialty'])['Quarterly'] || 40;
+                  const reactiveParts = pmParts * REACTIVE_PARTS_MULTIPLIER;
+
+                  // Emergency call total (labor + travel + mileage + parts) × OpEx margin
+                  const emergencyRaw = (repairHours + travelHours) * EMERGENCY_RATE + roundTripMiles * MILEAGE_RATE + reactiveParts;
+                  const emergencyTotal = emergencyRaw * OPEX_MARGIN;
+
+                  // Normal hours call total × OpEx margin
+                  const normalRaw = (repairHours + travelHours) * SERVICE_CALL_RATE + roundTripMiles * MILEAGE_RATE + reactiveParts;
+                  const normalTotal = normalRaw * OPEX_MARGIN;
+
+                  // Disruption cost scaled by usage level
+                  const usageMult = USAGE_DISRUPTION[usage] || 1.0;
+                  const disruption = DISRUPTION_RISK[category] || DISRUPTION_RISK['Specialty'];
+                  const disruptionLow = Math.round(disruption.low * usageMult);
+                  const disruptionHigh = Math.round(disruption.high * usageMult);
+
+                  return {
+                    type: a.type, category, usage,
+                    emergencyCallCost: emergencyTotal,
+                    normalCallCost: normalTotal,
+                    disruptionLow, disruptionHigh,
+                    locationName: loc?.name || 'Unknown'
+                  };
+                }).sort((a, b) => b.emergencyCallCost - a.emergencyCallCost);
+
+                // Aggregate by category with usage info
+                const categoryData = {};
+                allAssets.forEach(a => {
+                  const cat = EQUIPMENT_CATEGORY[a.type] || 'Specialty';
+                  const usage = a.usage_level || 'Normal';
+                  const usageMult = USAGE_DISRUPTION[usage] || 1.0;
+                  if (!categoryData[cat]) categoryData[cat] = { count: 0, maxUsageMult: 0 };
+                  categoryData[cat].count += (a.quantity || 1);
+                  if (usageMult > categoryData[cat].maxUsageMult) categoryData[cat].maxUsageMult = usageMult;
+                });
+
+                const hasRefrigeration = categoryData['Refrigeration']?.count > 0;
+                const hasCooking = categoryData['Cooking']?.count > 0;
+                const hasHVAC = categoryData['HVAC']?.count > 0;
+                const totalAssetCount = allAssets.reduce((s, a) => s + (a.quantity || 1), 0);
+
+                // Average call costs (already include 1.65 margin)
+                const avgEmergencyCall = assetRisks.length > 0
+                  ? assetRisks.reduce((sum, a) => sum + a.emergencyCallCost, 0) / assetRisks.length : 800;
+                const avgNormalCall = assetRisks.length > 0
+                  ? assetRisks.reduce((sum, a) => sum + a.normalCallCost, 0) / assetRisks.length : 550;
+
+                // Estimated reactive calls/year: ~1 per 4 assets, min 2
+                const estimatedCallsPerYear = Math.max(2, Math.round(totalAssetCount / 4));
+                // Mix: assume ~40% happen after hours
+                const annualServiceCalls = Math.round(estimatedCallsPerYear * (avgNormalCall * 0.6 + avgEmergencyCall * 0.4));
+
+                // Disruption costs (usage-adjusted)
+                let disruptionLow = 0, disruptionHigh = 0;
+                Object.entries(categoryData).forEach(([cat, data]) => {
+                  const risk = DISRUPTION_RISK[cat];
+                  if (risk) {
+                    const usageMult = data.maxUsageMult || 1.0;
+                    disruptionLow += Math.round(risk.low * usageMult) * Math.min(data.count, 3);
+                    disruptionHigh += Math.round(risk.high * usageMult) * Math.min(data.count, 3);
+                  }
+                });
+
+                const totalRiskLow = annualServiceCalls + disruptionLow;
+                const totalRiskHigh = Math.round(annualServiceCalls * 1.4) + disruptionHigh;
+
+                // Top 3 highest-cost equipment (just equipment name + total cost, no rate breakdown)
+                const topRisks = assetRisks.slice(0, 3);
+                const riskRows = topRisks.map(r => {
+                  const usageLabel = r.usage === 'Heavy' ? ' (Heavy Use)' : r.usage === 'Light' ? ' (Light Use)' : '';
+                  return `
+                  <tr style="border-bottom:1px solid rgba(231,76,60,.15)">
+                    <td style="padding:10px 0">
+                      <div style="font-weight:600">${r.type}${usageLabel}</div>
+                      <div style="font-size:11px; color:#888">${r.locationName}</div>
+                    </td>
+                    <td style="padding:10px 0; text-align:right; font-weight:bold; color:#e74c3c; font-size:14px">$${r.emergencyCallCost.toFixed(0)}</td>
+                  </tr>
+                `;
+                }).join('');
+
+                // Disruption rows by category, scaled by usage
+                const disruptionRows = Object.entries(categoryData).map(([cat, data]) => {
+                  const risk = DISRUPTION_RISK[cat];
+                  if (!risk) return '';
+                  const usageMult = data.maxUsageMult || 1.0;
+                  const low = Math.round(risk.low * usageMult);
+                  const high = Math.round(risk.high * usageMult);
+                  const usageNote = usageMult > 1.0 ? ' (heavy use)' : usageMult < 1.0 ? ' (light use)' : '';
+                  return `
+                    <tr style="border-bottom:1px solid rgba(231,76,60,.1)">
+                      <td style="padding:8px 0; font-size:13px">${risk.label}${usageNote}</td>
+                      <td style="padding:8px 0; text-align:right; font-size:13px; font-weight:600; color:#e74c3c">$${low.toLocaleString()} – $${high.toLocaleString()}</td>
+                    </tr>
+                  `;
+                }).join('');
+
+                const estimatedSavings = totalRiskLow - clientPricing.annual_contract;
+
+                return `
+              <div style="background:rgba(231,76,60,.05); border:2px solid #e74c3c; border-radius:12px; padding:25px; margin-top:30px">
+                <h3 style="color:#e74c3c; font-size:16px; margin:0 0 5px 0">Cost of Doing Nothing</h3>
+                <p style="margin:0 0 18px 0; font-size:12px; color:#888">Estimated reactive costs for your ${totalAssetCount} ${pluralize(totalAssetCount, 'asset')} across ${locations.length} ${pluralize(locations.length, 'location')} without a maintenance program</p>
+
+                <h4 style="color:#e74c3c; font-size:13px; margin:0 0 10px 0; text-transform:uppercase; letter-spacing:0.5px">Typical Emergency Service Call</h4>
+                <p style="font-size:11px; color:#888; margin:0 0 8px 0">Includes labor, portal-to-portal travel, mileage, and parts — your highest-cost equipment:</p>
+                <table style="width:100%; font-size:13px; color:#333; margin-bottom:20px">
+                  <tr style="border-bottom:1px solid rgba(231,76,60,.3)">
+                    <th style="padding:6px 0; text-align:left; font-size:11px; text-transform:uppercase; color:#e74c3c">Equipment</th>
+                    <th style="padding:6px 0; text-align:right; font-size:11px; text-transform:uppercase; color:#e74c3c">Est. Service Call</th>
+                  </tr>
+                  ${riskRows}
+                </table>
+
+                <h4 style="color:#e74c3c; font-size:13px; margin:0 0 10px 0; text-transform:uppercase; letter-spacing:0.5px">Operational Disruption Per Failure</h4>
+                <p style="font-size:11px; color:#888; margin:0 0 8px 0">Revenue loss, spoilage, regulatory risk, and customer impact per incident:</p>
+                <table style="width:100%; font-size:13px; color:#333; margin-bottom:20px">
+                  ${disruptionRows}
+                </table>
+
+                <div style="background:rgba(231,76,60,.08); border-radius:8px; padding:18px; margin-top:10px">
+                  <table style="width:100%; font-size:13px; color:#333">
+                    <tr style="border-bottom:1px solid rgba(231,76,60,.15)">
+                      <td style="padding:8px 0">Estimated service calls/year without PM:</td>
+                      <td style="padding:8px 0; text-align:right; font-weight:bold">${estimatedCallsPerYear}</td>
+                    </tr>
+                    <tr style="border-top:2px solid #e74c3c">
+                      <td style="padding:14px 0; font-size:15px"><strong>Estimated Annual Reactive Cost:</strong></td>
+                      <td style="padding:14px 0; text-align:right; font-weight:bold; font-size:18px; color:#e74c3c">$${totalRiskLow.toLocaleString()} – $${totalRiskHigh.toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0; font-size:15px; color:#2ecc71"><strong>Your PM Contract:</strong></td>
+                      <td style="padding:6px 0; text-align:right; font-weight:bold; font-size:18px; color:#2ecc71">$${clientPricing.annual_contract.toFixed(0)}/year</td>
+                    </tr>
+                    ${estimatedSavings > 0 ? `
+                    <tr>
+                      <td style="padding:10px 0; font-size:14px; color:#0F4C5C"><strong>Estimated Annual Savings:</strong></td>
+                      <td style="padding:10px 0; text-align:right; font-weight:bold; font-size:16px; color:#0F4C5C">$${estimatedSavings.toLocaleString()}+</td>
+                    </tr>
+                    ` : ''}
+                  </table>
+                </div>
+
+                <p style="margin:15px 0 0; font-size:12px; color:#666; font-style:italic">
+                  ${hasRefrigeration ? 'A single walk-in failure can result in $5,000–$12,000 in spoiled inventory and emergency repairs. ' : ''}${hasHVAC ? 'HVAC failures during peak season can force temporary closure, costing thousands per day. ' : ''}${hasCooking ? 'Every hour a fryer or oven is down during service directly cuts revenue. ' : ''}Preventive maintenance catches problems before they become emergencies — protecting your equipment, your product, and your bottom line.
+                </p>
+              </div>`;
+              })()}
               
               <div style="background:#fff; border:2px solid #F2B857; border-radius:12px; padding:25px; margin-top:30px">
                 <h3 style="color:#0F4C5C; font-size:16px; margin:0 0 15px 0">Service Level Agreement</h3>
                 <div style="font-size:14px; color:#333; line-height:1.8">
                   <p style="margin:5px 0"><strong>Response Time:</strong> Priority 24-hour emergency response</p>
-                  <p style="margin:5px 0"><strong>Coverage Area:</strong> Western Colorado (Grand Junction, Fruita, Palisade, Delta, Montrose)</p>
+                  <p style="margin:5px 0"><strong>Coverage Area:</strong> ${(() => {
+                    const cities = [...new Set(locations.map(l => l.city).filter(c => c && c.trim()))];
+                    return cities.length > 0 ? cities.join(', ') : 'Western Colorado';
+                  })()}</p>
                   <p style="margin:5px 0"><strong>Contract Term:</strong> 12 months, auto-renewal with 60-day notice</p>
                   <p style="margin:5px 0"><strong>Billing:</strong> Monthly recurring, due on the 1st</p>
                   <p style="margin:5px 0"><strong>Service Hours:</strong> Monday-Friday 7am-5pm, 24/7 emergency availability</p>
