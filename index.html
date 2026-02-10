@@ -412,6 +412,7 @@
       <button class="btn small primary" onclick="app.showScreen('schedule-optimizer')">📅 Schedules</button>
       <button class="btn small" onclick="app.exportData()">📥 Export</button>
       <button class="btn small" onclick="app.exportCsvPack()">📄 CSV Pack</button>
+      <button class="btn small" onclick="app.exportZohoPmPack()">📤 Zoho PM Export</button>
       <button class="btn small" onclick="app.importData()">📤 Import</button>
       <button class="btn small primary" onclick="app.showScreen('setup')">⚙️ Setup</button>
     </div>
@@ -457,6 +458,69 @@
           <button class="btn danger" onclick="app.clearAllData()">Clear All Data</button>
         </div>
         <p class="text-small">Sample data includes test clients, locations, and assets for demo purposes.</p>
+      </div>
+    </div>
+    
+    <!-- Pricebook Settings Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2>💰 Pricebook Settings</h2>
+      </div>
+      <div class="card-body">
+        <p class="text-small mb-2">Configure labor rates, member discounts, and fees used for PM contract calculations and proposals.</p>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Standard T&M Labor Rate ($/hr)</label>
+            <input type="number" id="config-standard-labor" class="form-control" step="1" min="0">
+            <p class="text-small">Standard Time & Materials labor rate for regular service calls.</p>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">PM Contract Labor Rate ($/hr)</label>
+            <input type="number" id="config-pm-labor" class="form-control" step="1" min="0">
+            <p class="text-small">Labor rate used for PM contract calculations (typically ~15% below standard rate).</p>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Member Discount - Labor (%)</label>
+            <input type="number" id="config-member-labor-disc" class="form-control" step="1" min="0" max="100">
+            <p class="text-small">Discount percentage on labor for PM members on non-contract repairs.</p>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Member Discount - Parts (%)</label>
+            <input type="number" id="config-member-parts-disc" class="form-control" step="1" min="0" max="100">
+            <p class="text-small">Discount percentage on parts for PM members on non-contract repairs.</p>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Service Call Fee ($)</label>
+            <input type="number" id="config-service-call" class="form-control" step="1" min="0">
+            <p class="text-small">Standard dispatch/service call fee.</p>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Travel Time Rate ($/hr)</label>
+            <input type="number" id="config-travel-rate" class="form-control" step="1" min="0">
+            <p class="text-small">Portal-to-portal travel time rate.</p>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Mileage Rate ($/mile)</label>
+            <input type="number" id="config-mileage-rate" class="form-control" step="0.01" min="0">
+            <p class="text-small">Per-mile charge for travel.</p>
+          </div>
+          <div class="form-group"></div>
+        </div>
+        
+        <button class="btn gold" onclick="app.savePricebookSettings()">💾 Save Pricebook Settings</button>
       </div>
     </div>
   </div>
@@ -1404,7 +1468,15 @@ const db = {
       essentials: 0,
       uptime_plus: 50,
       mission_critical: 100
-    }
+    },
+    // NEW: Pricebook pricing settings
+    standard_labor_rate: 195,       // T&M labor rate
+    pm_contract_labor_rate: 165,    // Labor rate used for PM contract calculations
+    member_discount_labor_pct: 10,  // % discount on labor for PM members
+    member_discount_parts_pct: 10,  // % discount on parts for PM members
+    service_call_fee: 125,          // Standard dispatch fee
+    travel_time_rate: 145,          // $/hour for travel time (portal-to-portal)
+    mileage_rate: 0.70              // $/mile
   },
   
   load() {
@@ -1417,7 +1489,17 @@ const db = {
         this.assets = parsed.assets || [];
         this.visits = parsed.visits || [];
         this.quotes = parsed.quotes || [];
-        this.config = Object.assign({ baseRate: 115, consumables: { essentials: 0, uptime_plus: 50, mission_critical: 100 } }, parsed.config || {});
+        this.config = Object.assign({ 
+          baseRate: 115, 
+          consumables: { essentials: 0, uptime_plus: 50, mission_critical: 100 },
+          standard_labor_rate: 195,
+          pm_contract_labor_rate: 165,
+          member_discount_labor_pct: 10,
+          member_discount_parts_pct: 10,
+          service_call_fee: 125,
+          travel_time_rate: 145,
+          mileage_rate: 0.70
+        }, parsed.config || {});
         // Ensure nested defaults
         this.config.consumables = Object.assign({ essentials: 0, uptime_plus: 50, mission_critical: 100 }, (parsed.config && parsed.config.consumables) ? parsed.config.consumables : (this.config.consumables || {}));
       }
@@ -1840,12 +1922,13 @@ function getLocationComplexityFactor(locationCount) {
 // Contract = Cost × 1.65
 // ============================================================================
 
+// Dynamic pricing rates from config (updated via Pricebook Settings)
 const PRICING_RATES = {
-  pm_labor_rate: 125,        // $/hour for PM work
-  travel_time_rate: 100,     // $/hour for travel time
-  mileage_rate: 0.70,        // $/mile
-  margin_multiplier: 1.65,   // Contract price = Cost × 1.65
-  avg_driving_speed: 55      // mph for travel time calculation
+  get pm_labor_rate() { return db.config.pm_contract_labor_rate || 165; },
+  get travel_time_rate() { return db.config.travel_time_rate || 145; },
+  get mileage_rate() { return db.config.mileage_rate || 0.70; },
+  get margin_multiplier() { return 1.65; },  // Fixed multiplier for now
+  get avg_driving_speed() { return 55; }      // Fixed assumption
 };
 
 const EQUIPMENT_SERVICE_TIME = {
@@ -2670,6 +2753,24 @@ const app = {
      if (screenName === 'new-quote') this.prepareNewQuote();
    if (screenName === 'pricing-settings') this.renderPricingSettings();
     if (screenName === 'schedule-optimizer') this.renderSchedulesByClient();
+    if (screenName === 'setup') {
+      // Populate pricebook settings fields
+      const sl = document.getElementById('config-standard-labor');
+      const pl = document.getElementById('config-pm-labor');
+      const mld = document.getElementById('config-member-labor-disc');
+      const mpd = document.getElementById('config-member-parts-disc');
+      const sc = document.getElementById('config-service-call');
+      const tr = document.getElementById('config-travel-rate');
+      const mr = document.getElementById('config-mileage-rate');
+      
+      if (sl) sl.value = db.config.standard_labor_rate || 195;
+      if (pl) pl.value = db.config.pm_contract_labor_rate || 165;
+      if (mld) mld.value = db.config.member_discount_labor_pct || 10;
+      if (mpd) mpd.value = db.config.member_discount_parts_pct || 10;
+      if (sc) sc.value = db.config.service_call_fee || 125;
+      if (tr) tr.value = db.config.travel_time_rate || 145;
+      if (mr) mr.value = db.config.mileage_rate || 0.70;
+    }
     
     // Populate dropdowns for add forms
     if (screenName === 'add-location') {
@@ -4099,6 +4200,27 @@ ${q.totalDiscount > 0 ? `
     }
   },
 
+  savePricebookSettings() {
+    const sl = document.getElementById('config-standard-labor');
+    const pl = document.getElementById('config-pm-labor');
+    const mld = document.getElementById('config-member-labor-disc');
+    const mpd = document.getElementById('config-member-parts-disc');
+    const sc = document.getElementById('config-service-call');
+    const tr = document.getElementById('config-travel-rate');
+    const mr = document.getElementById('config-mileage-rate');
+    
+    if (sl) db.config.standard_labor_rate = parseFloat(sl.value) || 195;
+    if (pl) db.config.pm_contract_labor_rate = parseFloat(pl.value) || 165;
+    if (mld) db.config.member_discount_labor_pct = parseFloat(mld.value) || 10;
+    if (mpd) db.config.member_discount_parts_pct = parseFloat(mpd.value) || 10;
+    if (sc) db.config.service_call_fee = parseFloat(sc.value) || 125;
+    if (tr) db.config.travel_time_rate = parseFloat(tr.value) || 145;
+    if (mr) db.config.mileage_rate = parseFloat(mr.value) || 0.70;
+    
+    db.save();
+    this.toast('Pricebook settings saved!');
+  },
+
   editAsset(assetId) {
     const asset = db.getAsset(assetId);
     if (!asset) return;
@@ -4614,6 +4736,181 @@ ${q.totalDiscount > 0 ? `
   download(toCsv(db.quotes || [], quotesCols), `ccr_quotes_${today}.csv`);
 
   this.toast('CSV pack exported!');
+},
+
+exportZohoPmPack() {
+  // Export CSVs formatted for Zoho CRM + FSM import
+  // Follows the overhaul.txt specification for Zoho integration
+  
+  const escapeCell = (val) => {
+    if (val === null || val === undefined) return '';
+    const s = String(val);
+    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  };
+  
+  const toCsv = (rows, columns) => {
+    const header = columns.map(c => escapeCell(c.header)).join(',');
+    const lines = rows.map(r => columns.map(c => escapeCell(c.get(r))).join(','));
+    return [header, ...lines].join('\n');
+  };
+  
+  const download = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 250);
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+
+  // CSV #1: Zoho CRM Accounts (Companies)
+  const accountsCols = [
+    { header: 'Account Name', get: r => r.name },
+    { header: 'Billing Street', get: r => {
+      const loc = db.getLocationsByClient(r.client_id)[0];
+      return loc ? loc.address.split('\n')[0] : '';
+    }},
+    { header: 'Billing City', get: r => {
+      const loc = db.getLocationsByClient(r.client_id)[0];
+      return loc ? (loc.city || 'Grand Junction') : '';
+    }},
+    { header: 'Billing State', get: r => 'CO' },
+    { header: 'Billing Zip', get: r => {
+      const loc = db.getLocationsByClient(r.client_id)[0];
+      if (!loc) return '';
+      const match = loc.address.match(/\b\d{5}\b/);
+      return match ? match[0] : '';
+    }},
+    { header: 'Phone', get: r => r.phone || '' },
+    { header: 'Website', get: r => '' }
+  ];
+  
+  download(toCsv(db.clients || [], accountsCols), `zoho_accounts_${today}.csv`);
+
+  // CSV #2: Zoho CRM Contacts
+  const contactsCols = [
+    { header: 'Account Name', get: r => r.name },
+    { header: 'First Name', get: r => {
+      const name = r.primary_contact || '';
+      const parts = name.split(' ');
+      return parts[0] || '';
+    }},
+    { header: 'Last Name', get: r => {
+      const name = r.primary_contact || '';
+      const parts = name.split(' ');
+      return parts.slice(1).join(' ') || 'Contact';
+    }},
+    { header: 'Email', get: r => r.email || '' },
+    { header: 'Phone', get: r => r.phone || '' },
+    { header: 'Title/Role', get: r => 'Primary Contact' }
+  ];
+  
+  download(toCsv(db.clients || [], contactsCols), `zoho_contacts_${today}.csv`);
+
+  // CSV #3: Zoho CRM Deals (PM Agreements)
+  const dealRows = db.clients.filter(c => c.contract_mode === 'contract').map(client => {
+    const total = calculateClientTotal(client.client_id);
+    const locations = db.getLocationsByClient(client.client_id);
+    const allAssets = locations.flatMap(loc => db.getAssetsByLocation(loc.location_id));
+    
+    // Calculate visits per year (use highest frequency)
+    let maxVisits = 1;
+    allAssets.forEach(asset => {
+      const visits = { 'Monthly': 12, 'Quarterly': 4, 'Bi-Annual': 2, 'Annual': 1 }[asset.pm_cadence] || 4;
+      if (visits > maxVisits) maxVisits = visits;
+    });
+    
+    return {
+      client,
+      annual: total.annual_contract,
+      monthly: total.monthly_contract,
+      locations: locations.length,
+      visits: maxVisits
+    };
+  });
+  
+  const dealsCols = [
+    { header: 'Deal Name', get: r => `${r.client.name} - PM Contract ${new Date().getFullYear()}` },
+    { header: 'Account Name', get: r => r.client.name },
+    { header: 'Amount', get: r => Math.round(r.annual * 100) / 100 },
+    { header: 'Stage', get: r => 'Active Contract' },
+    { header: 'Close Date', get: r => today },
+    { header: 'Start Date', get: r => today },
+    { header: 'Renewal Date', get: r => {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() + 1);
+      return d.toISOString().split('T')[0];
+    }},
+    { header: 'Visits Per Year', get: r => r.visits },
+    { header: 'PM Labor Rate', get: r => db.config.pm_contract_labor_rate || 165 },
+    { header: 'Member Labor Discount %', get: r => db.config.member_discount_labor_pct || 10 },
+    { header: 'Member Parts Discount %', get: r => db.config.member_discount_parts_pct || 10 },
+    { header: 'Notes', get: r => `${r.locations} location(s), ${r.visits} visits/year. Monthly: $${Math.round(r.monthly)}` }
+  ];
+  
+  download(toCsv(dealRows, dealsCols), `zoho_pm_deals_${today}.csv`);
+
+  // CSV #4: PM Schedule Seed
+  const scheduleRows = [];
+  db.clients.filter(c => c.contract_mode === 'contract').forEach(client => {
+    const locations = db.getLocationsByClient(client.client_id);
+    locations.forEach(loc => {
+      const assets = db.getAssetsByLocation(loc.location_id);
+      if (assets.length === 0) return;
+      
+      // Determine cadence (use most frequent)
+      let cadence = 'Quarterly';
+      let maxVisits = 4;
+      assets.forEach(asset => {
+        const visits = { 'Monthly': 12, 'Quarterly': 4, 'Bi-Annual': 2, 'Annual': 1 }[asset.pm_cadence] || 4;
+        if (visits > maxVisits) {
+          maxVisits = visits;
+          cadence = asset.pm_cadence;
+        }
+      });
+      
+      // Estimate duration
+      let durationMinutes = 0;
+      assets.forEach(asset => {
+        const serviceTime = EQUIPMENT_SERVICE_TIME[asset.type] || 1.0;
+        durationMinutes += serviceTime * 60 * (asset.quantity || 1);
+      });
+      durationMinutes += 30; // Add travel/setup time
+      
+      // Equipment summary
+      const equipmentSummary = assets.map(a => `${a.quantity || 1}x ${a.type}`).join(', ');
+      
+      scheduleRows.push({
+        client,
+        location: loc,
+        cadence,
+        visits: maxVisits,
+        duration: Math.round(durationMinutes),
+        equipment: equipmentSummary,
+        notes: `${assets.length} assets total`
+      });
+    });
+  });
+  
+  const scheduleCols = [
+    { header: 'Account Name', get: r => r.client.name },
+    { header: 'Location Name', get: r => r.location.name },
+    { header: 'Location Address', get: r => r.location.address },
+    { header: 'Cadence', get: r => r.cadence },
+    { header: 'Visits Per Year', get: r => r.visits },
+    { header: 'Preferred Month(s) or Next Visit Date', get: r => '' },
+    { header: 'Included Equipment Summary', get: r => r.equipment },
+    { header: 'Estimated Duration Minutes', get: r => r.duration },
+    { header: 'Internal Notes for Tech', get: r => r.notes }
+  ];
+  
+  download(toCsv(scheduleRows, scheduleCols), `zoho_pm_schedule_seed_${today}.csv`);
+
+  this.toast('Zoho PM Export Pack created! (4 CSV files)');
 },
 
   
